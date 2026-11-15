@@ -65,8 +65,12 @@ class SheetLayout(val profile: SheetProfile) {
         /** Share of each column's width reserved for the printed question number. */
         const val LABEL_FRACTION = 0.20f
 
-        /** A4 portrait: height / width, used to convert vertical distances to width units. */
-        const val HEIGHT_TO_WIDTH_RATIO = 297f / 210f
+        /**
+         * Height / width of the area between the centers of the four corner markers
+         * on an A4 page in PDF points (595 x 842, markers centered 30 pt from each edge):
+         * (842 - 60) / (595 - 60). Converts vertical distances to width units.
+         */
+        const val HEIGHT_TO_WIDTH_RATIO = 782f / 535f
 
         const val RADIUS_FACTOR = 0.30f
     }
