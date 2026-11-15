@@ -37,6 +37,7 @@ import com.devdenisviana.gabaritoscanner.render.SheetPdfExporter
 import com.devdenisviana.gabaritoscanner.ui.camera.CameraScreen
 import com.devdenisviana.gabaritoscanner.ui.theme.GabaritoScannerTheme
 import java.io.File
+import com.devdenisviana.gabaritoscanner.ui.scan.ScanResultScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,7 +78,7 @@ fun GabaritoApp(modifier: Modifier = Modifier) {
             modifier = modifier,
         )
 
-        is Screen.Photo -> PhotoPreviewScreen(
+        is Screen.Photo -> ScanResultScreen(
             file = current.file,
             onRetake = { screen = Screen.Camera },
             onClose = { screen = Screen.Home },
@@ -103,52 +104,6 @@ fun HomeScreen(onScan: () -> Unit, modifier: Modifier = Modifier) {
         }
         Button(onClick = onScan) {
             Text(text = "Ler gabarito (câmera)")
-        }
-    }
-}
-
-@Composable
-fun PhotoPreviewScreen(
-    file: File,
-    onRetake: () -> Unit,
-    onClose: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val size = remember(file) {
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeFile(file.absolutePath, bounds)
-        bounds.outWidth to bounds.outHeight
-    }
-    val bitmap = remember(file) {
-        val options = BitmapFactory.Options().apply { inSampleSize = 4 }
-        BitmapFactory.decodeFile(file.absolutePath, options)
-    }
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(text = "Foto: ${size.first} x ${size.second} px")
-
-        if (bitmap != null) {
-            Image(
-                bitmap = bitmap.asImageBitmap(),
-                contentDescription = "Foto capturada",
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-            )
-        } else {
-            Text(text = "Não foi possível abrir a foto.")
-        }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Button(onClick = onClose) { Text("Início") }
-            Button(onClick = onRetake) { Text("Tirar outra") }
         }
     }
 }
