@@ -3,19 +3,15 @@ package com.devdenisviana.gabaritoscanner
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
@@ -27,17 +23,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.devdenisviana.gabaritoscanner.data.ExamEntity
 import com.devdenisviana.gabaritoscanner.domain.sheet.SheetProfile
 import com.devdenisviana.gabaritoscanner.render.SheetPdfExporter
+import com.devdenisviana.gabaritoscanner.ui.AppViewModel
 import com.devdenisviana.gabaritoscanner.ui.camera.CameraScreen
+import com.devdenisviana.gabaritoscanner.ui.exam.ExamFormScreen
+import com.devdenisviana.gabaritoscanner.ui.exam.ExamListScreen
+import com.devdenisviana.gabaritoscanner.ui.exam.ExamPickerScreen
+import com.devdenisviana.gabaritoscanner.ui.exam.ExamResultsScreen
+import com.devdenisviana.gabaritoscanner.ui.scan.ScanResultScreen
 import com.devdenisviana.gabaritoscanner.ui.theme.GabaritoScannerTheme
 import java.io.File
-import com.devdenisviana.gabaritoscanner.ui.scan.ScanResultScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,31 +58,88 @@ class MainActivity : ComponentActivity() {
 /** The screens of the app (simple state-based navigation for now). */
 sealed interface Screen {
     data object Home : Screen
-    data object Camera : Screen
-    data class Photo(val file: File) : Screen
+    data object Exams : Screen
+    data object ExamForm : Screen
+    data object PickExam : Screen
+    data class Results(val exam: ExamEntity) : Screen
+    data class Camera(val exam: ExamEntity) : Screen
+    data class Photo(val file: File, val exam: ExamEntity) : Screen
 }
 
 @Composable
-fun GabaritoApp(modifier: Modifier = Modifier) {
+fun GabaritoApp(
+    modifier: Modifier = Modifier,
+    viewModel: AppViewModel = viewModel(),
+) {
     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
+    val exams by viewModel.exams.collectAsStateWithLifecycle()
 
-    BackHandler(enabled = screen != Screen.Home) { screen = Screen.Home }
+    BackHandler(enabled = screen != Screen.Home) {
+        screen = when (screen) {
+            Screen.ExamForm, is Screen.Results -> Screen.Exams
+            else -> Screen.Home
+        }
+    }
 
     when (val current = screen) {
         Screen.Home -> HomeScreen(
-            onScan = { screen = Screen.Camera },
+            onExams = { screen = Screen.Exams },
+            onScan = { screen = Screen.PickExam },
             modifier = modifier,
         )
 
-        Screen.Camera -> CameraScreen(
-            onPhotoCaptured = { file -> screen = Screen.Photo(file) },
+        Screen.Exams -> ExamListScreen(
+            exams = exams,
+            onOpen = { exam ->
+                viewModel.selectExam(exam.id)
+                screen = Screen.Results(exam)
+            },
+            onNewExam = { screen = Screen.ExamForm },
+            onDelete = viewModel::deleteExam,
+            onBack = { screen = Screen.Home },
+            modifier = modifier,
+        )
+
+        Screen.ExamForm -> ExamFormScreen(
+            questionCount = SheetProfile.DEFAULT.questionCount,
+            onSave = viewModel::createExam,
+            onBack = { screen = Screen.Exams },
+            modifier = modifier,
+        )
+
+        Screen.PickExam -> ExamPickerScreen(
+            exams = exams,
+            onPick = { exam -> screen = Screen.Camera(exam) },
+            onNewExam = { screen = Screen.ExamForm },
+            onBack = { screen = Screen.Home },
+            modifier = modifier,
+        )
+
+        is Screen.Results -> {
+            val results by viewModel.results.collectAsStateWithLifecycle()
+            ExamResultsScreen(
+                exam = current.exam,
+                results = results,
+                onScan = { screen = Screen.Camera(current.exam) },
+                onDelete = viewModel::deleteResult,
+                onBack = { screen = Screen.Exams },
+                modifier = modifier,
+            )
+        }
+
+        is Screen.Camera -> CameraScreen(
+            onPhotoCaptured = { file -> screen = Screen.Photo(file, current.exam) },
             onClose = { screen = Screen.Home },
             modifier = modifier,
         )
 
         is Screen.Photo -> ScanResultScreen(
             file = current.file,
-            onRetake = { screen = Screen.Camera },
+            exam = current.exam,
+            onSave = { name, code, readings, grade ->
+                viewModel.saveResult(current.exam, name, code, readings, grade)
+            },
+            onRetake = { screen = Screen.Camera(current.exam) },
             onClose = { screen = Screen.Home },
             modifier = modifier,
         )
@@ -88,7 +147,11 @@ fun GabaritoApp(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun HomeScreen(onScan: () -> Unit, modifier: Modifier = Modifier) {
+fun HomeScreen(
+    onExams: () -> Unit,
+    onScan: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val context = LocalContext.current
 
     Column(
@@ -99,11 +162,14 @@ fun HomeScreen(onScan: () -> Unit, modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(text = "Gabarito Scanner")
-        Button(onClick = { openSheetPdf(context, SheetProfile.DEFAULT) }) {
-            Text(text = "Gerar folha de respostas (PDF)")
+        Button(onClick = onExams) {
+            Text(text = "Provas")
         }
         Button(onClick = onScan) {
             Text(text = "Ler gabarito (câmera)")
+        }
+        Button(onClick = { openSheetPdf(context, SheetProfile.DEFAULT) }) {
+            Text(text = "Gerar folha de respostas (PDF)")
         }
     }
 }

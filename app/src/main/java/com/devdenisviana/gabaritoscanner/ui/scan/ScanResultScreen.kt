@@ -8,9 +8,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,9 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import com.devdenisviana.gabaritoscanner.data.ExamEntity
+import com.devdenisviana.gabaritoscanner.data.toAnswerKey
+import com.devdenisviana.gabaritoscanner.data.toSheetProfile
 import com.devdenisviana.gabaritoscanner.domain.sheet.SheetLayout
-import com.devdenisviana.gabaritoscanner.domain.sheet.SheetProfile
-import com.devdenisviana.gabaritoscanner.grading.AnswerKey
 import com.devdenisviana.gabaritoscanner.grading.GradeResult
 import com.devdenisviana.gabaritoscanner.grading.Grader
 import com.devdenisviana.gabaritoscanner.scan.AlignResult
@@ -39,9 +43,6 @@ import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** TEMPORARY answer key used until exams can be registered (next step). */
-private const val DEMO_ANSWER_KEY = "ABCDEABCBBBABDBAEDBD"
-
 private sealed interface ScanUiState {
     data object Loading : ScanUiState
     data class Done(
@@ -53,17 +54,30 @@ private sealed interface ScanUiState {
     data class Error(val message: String) : ScanUiState
 }
 
-/** Aligns the captured photo, reads the bubbles, grades them and shows the result. */
+/**
+ * Aligns the captured photo, reads the bubbles, grades them against [exam]
+ * and lets the user save the result with the student's name.
+ */
 @Composable
 fun ScanResultScreen(
     file: File,
+    exam: ExamEntity,
+    onSave: (
+        studentName: String,
+        studentCode: String,
+        readings: List<QuestionReading>,
+        grade: GradeResult,
+    ) -> Unit,
     onRetake: () -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var state by remember(file) { mutableStateOf<ScanUiState>(ScanUiState.Loading) }
+    var studentName by remember(file) { mutableStateOf("") }
+    var studentCode by remember(file) { mutableStateOf("") }
+    var saved by remember(file) { mutableStateOf(false) }
 
-    LaunchedEffect(file) {
+    LaunchedEffect(file, exam.id) {
         state = withContext(Dispatchers.Default) {
             val photo = BitmapFactory.decodeFile(file.absolutePath)
             if (photo == null) {
@@ -72,12 +86,10 @@ fun ScanResultScreen(
                 when (val result = SheetAligner.align(photo)) {
                     is AlignResult.Failure -> ScanUiState.Error(result.reason)
                     is AlignResult.Success -> {
-                        val profile = SheetProfile.DEFAULT
-                        val layout = SheetLayout(profile)
+                        val layout = SheetLayout(exam.toSheetProfile())
                         val readings = BubbleReader(layout).read(result.sheet.toGrayImage())
                         val overlay = ScanOverlay.draw(result.sheet, layout, readings)
-                        val key = AnswerKey.parse(DEMO_ANSWER_KEY, profile)
-                        ScanUiState.Done(overlay, readings, Grader.grade(key, readings))
+                        ScanUiState.Done(overlay, readings, Grader.grade(exam.toAnswerKey(), readings))
                     }
                 }
             }
@@ -87,8 +99,9 @@ fun ScanResultScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .imePadding()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         when (val current = state) {
@@ -100,6 +113,7 @@ fun ScanResultScreen(
             is ScanUiState.Done -> {
                 val grade = current.grade
 
+                Text("Prova: ${exam.name}")
                 Text("Acertos: ${grade.correct}   Erros: ${grade.errors}   Nota: ${"%.1f".format(grade.score10)}")
                 Text("(erros: ${grade.wrong} erradas, ${grade.blank} em branco, ${grade.multiple} duplas)")
                 Image(
@@ -112,13 +126,41 @@ fun ScanResultScreen(
                 )
                 Text(answersLine(current.readings))
                 Text("– = em branco   * = marcação dupla")
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = studentName,
+                        onValueChange = { studentName = it },
+                        label = { Text("Aluno") },
+                        singleLine = true,
+                        enabled = !saved,
+                        modifier = Modifier.weight(2f),
+                    )
+                    OutlinedTextField(
+                        value = studentCode,
+                        onValueChange = { studentCode = it },
+                        label = { Text("Matrícula") },
+                        singleLine = true,
+                        enabled = !saved,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Button(
+                    onClick = {
+                        onSave(studentName, studentCode, current.readings, current.grade)
+                        saved = true
+                    },
+                    enabled = !saved && studentName.isNotBlank(),
+                ) {
+                    Text(if (saved) "Resultado salvo ✓" else "Salvar resultado")
+                }
             }
 
             is ScanUiState.Error -> Text(current.message)
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Button(onClick = onClose) { Text("Início") }
+            OutlinedButton(onClick = onClose) { Text("Início") }
             Button(onClick = onRetake) { Text("Tirar outra") }
         }
     }
