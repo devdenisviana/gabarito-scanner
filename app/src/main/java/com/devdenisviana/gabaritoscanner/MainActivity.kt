@@ -3,27 +3,40 @@ package com.devdenisviana.gabaritoscanner
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.devdenisviana.gabaritoscanner.domain.sheet.SheetProfile
 import com.devdenisviana.gabaritoscanner.render.SheetPdfExporter
+import com.devdenisviana.gabaritoscanner.ui.camera.CameraScreen
 import com.devdenisviana.gabaritoscanner.ui.theme.GabaritoScannerTheme
+import java.io.File
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,27 +45,110 @@ class MainActivity : ComponentActivity() {
         setContent {
             GabaritoScannerTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    HomeScreen(modifier = Modifier.padding(innerPadding))
+                    GabaritoApp(modifier = Modifier.padding(innerPadding))
                 }
             }
         }
     }
 }
 
+/** The screens of the app (simple state-based navigation for now). */
+sealed interface Screen {
+    data object Home : Screen
+    data object Camera : Screen
+    data class Photo(val file: File) : Screen
+}
+
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
+fun GabaritoApp(modifier: Modifier = Modifier) {
+    var screen by remember { mutableStateOf<Screen>(Screen.Home) }
+
+    BackHandler(enabled = screen != Screen.Home) { screen = Screen.Home }
+
+    when (val current = screen) {
+        Screen.Home -> HomeScreen(
+            onScan = { screen = Screen.Camera },
+            modifier = modifier,
+        )
+
+        Screen.Camera -> CameraScreen(
+            onPhotoCaptured = { file -> screen = Screen.Photo(file) },
+            onClose = { screen = Screen.Home },
+            modifier = modifier,
+        )
+
+        is Screen.Photo -> PhotoPreviewScreen(
+            file = current.file,
+            onRetake = { screen = Screen.Camera },
+            onClose = { screen = Screen.Home },
+            modifier = modifier,
+        )
+    }
+}
+
+@Composable
+fun HomeScreen(onScan: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(text = "Gabarito Scanner")
         Button(onClick = { openSheetPdf(context, SheetProfile.DEFAULT) }) {
             Text(text = "Gerar folha de respostas (PDF)")
+        }
+        Button(onClick = onScan) {
+            Text(text = "Ler gabarito (câmera)")
+        }
+    }
+}
+
+@Composable
+fun PhotoPreviewScreen(
+    file: File,
+    onRetake: () -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val size = remember(file) {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.absolutePath, bounds)
+        bounds.outWidth to bounds.outHeight
+    }
+    val bitmap = remember(file) {
+        val options = BitmapFactory.Options().apply { inSampleSize = 4 }
+        BitmapFactory.decodeFile(file.absolutePath, options)
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(text = "Foto: ${size.first} x ${size.second} px")
+
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = "Foto capturada",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+            )
+        } else {
+            Text(text = "Não foi possível abrir a foto.")
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Button(onClick = onClose) { Text("Início") }
+            Button(onClick = onRetake) { Text("Tirar outra") }
         }
     }
 }
