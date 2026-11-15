@@ -23,19 +23,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import com.devdenisviana.gabaritoscanner.domain.sheet.SheetLayout
+import com.devdenisviana.gabaritoscanner.domain.sheet.SheetProfile
 import com.devdenisviana.gabaritoscanner.scan.AlignResult
+import com.devdenisviana.gabaritoscanner.scan.Answer
+import com.devdenisviana.gabaritoscanner.scan.BubbleReader
+import com.devdenisviana.gabaritoscanner.scan.QuestionReading
+import com.devdenisviana.gabaritoscanner.scan.ScanOverlay
 import com.devdenisviana.gabaritoscanner.scan.SheetAligner
+import com.devdenisviana.gabaritoscanner.scan.toGrayImage
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private sealed interface ScanUiState {
     data object Loading : ScanUiState
-    data class Aligned(val sheet: Bitmap) : ScanUiState
+    data class Done(val overlay: Bitmap, val readings: List<QuestionReading>) : ScanUiState
     data class Error(val message: String) : ScanUiState
 }
 
-/** Runs the sheet aligner on the captured photo and shows the straightened result. */
+/** Aligns the captured photo, reads the bubbles and shows the result over the sheet. */
 @Composable
 fun ScanResultScreen(
     file: File,
@@ -52,8 +59,13 @@ fun ScanResultScreen(
                 ScanUiState.Error("Não foi possível abrir a foto.")
             } else {
                 when (val result = SheetAligner.align(photo)) {
-                    is AlignResult.Success -> ScanUiState.Aligned(result.sheet)
                     is AlignResult.Failure -> ScanUiState.Error(result.reason)
+                    is AlignResult.Success -> {
+                        val layout = SheetLayout(SheetProfile.DEFAULT)
+                        val readings = BubbleReader(layout).read(result.sheet.toGrayImage())
+                        val overlay = ScanOverlay.draw(result.sheet, layout, readings)
+                        ScanUiState.Done(overlay, readings)
+                    }
                 }
             }
         }
@@ -72,21 +84,25 @@ fun ScanResultScreen(
                 Text("Processando a folha...")
             }
 
-            is ScanUiState.Aligned -> {
-                Text("Folha alinhada: ${current.sheet.width} x ${current.sheet.height} px")
+            is ScanUiState.Done -> {
+                val marked = current.readings.count { it.answer is Answer.Marked }
+                val blank = current.readings.count { it.answer is Answer.Blank }
+                val multiple = current.readings.count { it.answer is Answer.Multiple }
+
+                Text("Lidas: $marked   Em branco: $blank   Duplas: $multiple")
                 Image(
-                    bitmap = current.sheet.asImageBitmap(),
-                    contentDescription = "Folha alinhada",
+                    bitmap = current.overlay.asImageBitmap(),
+                    contentDescription = "Folha lida",
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth(),
                 )
+                Text(answersLine(current.readings))
+                Text("– = em branco   * = marcação dupla")
             }
 
-            is ScanUiState.Error -> {
-                Text(current.message)
-            }
+            is ScanUiState.Error -> Text(current.message)
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -95,3 +111,13 @@ fun ScanResultScreen(
         }
     }
 }
+
+private fun answersLine(readings: List<QuestionReading>): String =
+    readings.joinToString("  ") { reading ->
+        val symbol = when (val answer = reading.answer) {
+            is Answer.Marked -> answer.option.toString()
+            Answer.Blank -> "–"
+            is Answer.Multiple -> "*"
+        }
+        "${reading.question}:$symbol"
+    }
