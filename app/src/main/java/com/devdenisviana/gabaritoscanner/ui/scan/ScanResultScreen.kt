@@ -25,6 +25,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.devdenisviana.gabaritoscanner.domain.sheet.SheetLayout
 import com.devdenisviana.gabaritoscanner.domain.sheet.SheetProfile
+import com.devdenisviana.gabaritoscanner.grading.AnswerKey
+import com.devdenisviana.gabaritoscanner.grading.GradeResult
+import com.devdenisviana.gabaritoscanner.grading.Grader
 import com.devdenisviana.gabaritoscanner.scan.AlignResult
 import com.devdenisviana.gabaritoscanner.scan.Answer
 import com.devdenisviana.gabaritoscanner.scan.BubbleReader
@@ -36,13 +39,21 @@ import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+/** TEMPORARY answer key used until exams can be registered (next step). */
+private const val DEMO_ANSWER_KEY = "ABCDEABCBBBABDBAEDBD"
+
 private sealed interface ScanUiState {
     data object Loading : ScanUiState
-    data class Done(val overlay: Bitmap, val readings: List<QuestionReading>) : ScanUiState
+    data class Done(
+        val overlay: Bitmap,
+        val readings: List<QuestionReading>,
+        val grade: GradeResult,
+    ) : ScanUiState
+
     data class Error(val message: String) : ScanUiState
 }
 
-/** Aligns the captured photo, reads the bubbles and shows the result over the sheet. */
+/** Aligns the captured photo, reads the bubbles, grades them and shows the result. */
 @Composable
 fun ScanResultScreen(
     file: File,
@@ -61,10 +72,12 @@ fun ScanResultScreen(
                 when (val result = SheetAligner.align(photo)) {
                     is AlignResult.Failure -> ScanUiState.Error(result.reason)
                     is AlignResult.Success -> {
-                        val layout = SheetLayout(SheetProfile.DEFAULT)
+                        val profile = SheetProfile.DEFAULT
+                        val layout = SheetLayout(profile)
                         val readings = BubbleReader(layout).read(result.sheet.toGrayImage())
                         val overlay = ScanOverlay.draw(result.sheet, layout, readings)
-                        ScanUiState.Done(overlay, readings)
+                        val key = AnswerKey.parse(DEMO_ANSWER_KEY, profile)
+                        ScanUiState.Done(overlay, readings, Grader.grade(key, readings))
                     }
                 }
             }
@@ -85,11 +98,10 @@ fun ScanResultScreen(
             }
 
             is ScanUiState.Done -> {
-                val marked = current.readings.count { it.answer is Answer.Marked }
-                val blank = current.readings.count { it.answer is Answer.Blank }
-                val multiple = current.readings.count { it.answer is Answer.Multiple }
+                val grade = current.grade
 
-                Text("Lidas: $marked   Em branco: $blank   Duplas: $multiple")
+                Text("Acertos: ${grade.correct}   Erros: ${grade.errors}   Nota: ${"%.1f".format(grade.score10)}")
+                Text("(erros: ${grade.wrong} erradas, ${grade.blank} em branco, ${grade.multiple} duplas)")
                 Image(
                     bitmap = current.overlay.asImageBitmap(),
                     contentDescription = "Folha lida",
