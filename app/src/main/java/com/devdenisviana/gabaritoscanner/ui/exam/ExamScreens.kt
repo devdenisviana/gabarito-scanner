@@ -99,25 +99,38 @@ fun ExamListScreen(
     }
 }
 
+/** Form fields kept outside the screen, so they survive a trip to the camera. */
+class ExamDraft {
+    var name by mutableStateOf("")
+    var questionCountText by mutableStateOf("20")
+    var options by mutableIntStateOf(5)
+    var answerKey by mutableStateOf("")
+
+    fun clear() {
+        name = ""
+        questionCountText = "20"
+        options = 5
+        answerKey = ""
+    }
+}
+
 /**
  * Form to register an answer key. [onSave] returns an error message to display,
  * or null when it was created (the screen then goes back).
  */
 @Composable
 fun ExamFormScreen(
+    draft: ExamDraft,
     onSave: (name: String, answerKey: String, questionCount: Int, optionsPerQuestion: Int) -> String?,
+    onReadFromSheet: (questionCount: Int, optionsPerQuestion: Int) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var name by remember { mutableStateOf("") }
-    var questionCountText by remember { mutableStateOf("20") }
-    var options by remember { mutableIntStateOf(5) }
-    var answerKey by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
 
-    val questionCount = questionCountText.toIntOrNull() ?: 0
-    val typed = answerKey.count { !it.isWhitespace() }
-    val lastLetter = 'A' + options - 1
+    val questionCount = draft.questionCountText.toIntOrNull() ?: 0
+    val typed = draft.answerKey.count { !it.isWhitespace() }
+    val lastLetter = 'A' + draft.options - 1
 
     Column(
         modifier = modifier
@@ -129,9 +142,9 @@ fun ExamFormScreen(
         Text(text = "Novo gabarito", style = MaterialTheme.typography.headlineSmall)
 
         OutlinedTextField(
-            value = name,
+            value = draft.name,
             onValueChange = {
-                name = it
+                draft.name = it
                 error = null
             },
             label = { Text("Nome do gabarito") },
@@ -140,9 +153,9 @@ fun ExamFormScreen(
         )
 
         OutlinedTextField(
-            value = questionCountText,
+            value = draft.questionCountText,
             onValueChange = { text ->
-                questionCountText = text.filter { it.isDigit() }.take(3)
+                draft.questionCountText = text.filter { it.isDigit() }.take(3)
                 error = null
             },
             label = { Text("Quantidade de questões") },
@@ -156,9 +169,9 @@ fun ExamFormScreen(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for (count in 2..5) {
                 FilterChip(
-                    selected = options == count,
+                    selected = draft.options == count,
                     onClick = {
-                        options = count
+                        draft.options = count
                         error = null
                     },
                     label = { Text("A–${'A' + count - 1}") },
@@ -166,10 +179,18 @@ fun ExamFormScreen(
             }
         }
 
+        OutlinedButton(onClick = {
+            if (questionCount !in 1..100) {
+                error = "O número de questões deve ficar entre 1 e 100."
+            } else {
+                onReadFromSheet(questionCount, draft.options)
+            }
+        }) { Text("Ler de uma folha preenchida") }
+
         OutlinedTextField(
-            value = answerKey,
+            value = draft.answerKey,
             onValueChange = {
-                answerKey = it.uppercase()
+                draft.answerKey = it.uppercase()
                 error = null
             },
             label = { Text("Respostas do gabarito") },
@@ -184,10 +205,18 @@ fun ExamFormScreen(
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(onClick = {
-                val message = onSave(name, answerKey, questionCount, options)
-                if (message == null) onBack() else error = message
+                val message = onSave(draft.name, draft.answerKey, questionCount, draft.options)
+                if (message == null) {
+                    draft.clear()
+                    onBack()
+                } else {
+                    error = message
+                }
             }) { Text("Salvar") }
-            OutlinedButton(onClick = onBack) { Text("Cancelar") }
+            OutlinedButton(onClick = {
+                draft.clear()
+                onBack()
+            }) { Text("Cancelar") }
         }
     }
 }

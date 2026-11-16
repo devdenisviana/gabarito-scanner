@@ -29,10 +29,12 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.devdenisviana.gabaritoscanner.data.ExamEntity
+import com.devdenisviana.gabaritoscanner.data.toSheetProfile
 import com.devdenisviana.gabaritoscanner.domain.sheet.SheetProfile
 import com.devdenisviana.gabaritoscanner.render.SheetPdfExporter
 import com.devdenisviana.gabaritoscanner.ui.AppViewModel
 import com.devdenisviana.gabaritoscanner.ui.camera.CameraScreen
+import com.devdenisviana.gabaritoscanner.ui.exam.ExamDraft
 import com.devdenisviana.gabaritoscanner.ui.exam.ExamFormScreen
 import com.devdenisviana.gabaritoscanner.ui.exam.ExamListScreen
 import com.devdenisviana.gabaritoscanner.ui.exam.ExamPickerScreen
@@ -40,7 +42,6 @@ import com.devdenisviana.gabaritoscanner.ui.exam.ExamResultsScreen
 import com.devdenisviana.gabaritoscanner.ui.scan.ScanResultScreen
 import com.devdenisviana.gabaritoscanner.ui.theme.GabaritoScannerTheme
 import java.io.File
-import com.devdenisviana.gabaritoscanner.data.toSheetProfile
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,6 +76,7 @@ fun GabaritoApp(
     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
     val exams by viewModel.exams.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val draft = remember { ExamDraft() }
 
     BackHandler(enabled = screen != Screen.Home) {
         screen = when (screen) {
@@ -96,15 +98,20 @@ fun GabaritoApp(
                 viewModel.selectExam(exam.id)
                 screen = Screen.Results(exam)
             },
-            onNewExam = { screen = Screen.ExamForm },
             onSheet = { exam -> openSheetPdf(context, exam.toSheetProfile()) },
+            onNewExam = {
+                draft.clear()
+                screen = Screen.ExamForm
+            },
             onDelete = viewModel::deleteExam,
             onBack = { screen = Screen.Home },
             modifier = modifier,
         )
 
         Screen.ExamForm -> ExamFormScreen(
+            draft = draft,
             onSave = viewModel::createExam,
+            onReadFromSheet = { _, _ -> },
             onBack = { screen = Screen.Exams },
             modifier = modifier,
         )
@@ -112,7 +119,10 @@ fun GabaritoApp(
         Screen.PickExam -> ExamPickerScreen(
             exams = exams,
             onPick = { exam -> screen = Screen.Camera(exam) },
-            onNewExam = { screen = Screen.ExamForm },
+            onNewExam = {
+                draft.clear()
+                screen = Screen.ExamForm
+            },
             onBack = { screen = Screen.Home },
             modifier = modifier,
         )
