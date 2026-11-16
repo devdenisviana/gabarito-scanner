@@ -33,5 +33,17 @@ data class SheetProfile(
             optionsPerQuestion = 5,
             columns = 2,
         )
+
+        /** Cria um perfil de folha escolhendo as colunas automaticamente (até 15 linhas por coluna). */
+        fun of(questionCount: Int, optionsPerQuestion: Int): SheetProfile {
+            val columns = ((questionCount + 14) / 15).coerceIn(1, 4)
+            return SheetProfile(
+                id = "q$questionCount-o$optionsPerQuestion",
+                name = "$questionCount questões, $optionsPerQuestion alternativas",
+                questionCount = questionCount,
+                optionsPerQuestion = optionsPerQuestion,
+                columns = columns,
+            )
+        }
     }
 }
