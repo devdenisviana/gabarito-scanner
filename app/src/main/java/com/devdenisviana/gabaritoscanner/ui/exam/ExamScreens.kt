@@ -33,11 +33,12 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.text.input.KeyboardType
 
-/** Lists the registered exams, with options to create and delete them. */
+/** Lists the registered answer keys, with options to create, print the sheet and delete them. */
 @Composable
 fun ExamListScreen(
     exams: List<ExamEntity>,
     onOpen: (ExamEntity) -> Unit,
+    onSheet: (ExamEntity) -> Unit,
     onNewExam: () -> Unit,
     onDelete: (ExamEntity) -> Unit,
     onBack: () -> Unit,
@@ -51,30 +52,28 @@ fun ExamListScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(text = "Provas", style = MaterialTheme.typography.headlineSmall)
+        Text(text = "Gabaritos", style = MaterialTheme.typography.headlineSmall)
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(onClick = onNewExam) { Text("Nova prova") }
+            Button(onClick = onNewExam) { Text("Novo gabarito") }
             OutlinedButton(onClick = onBack) { Text("Voltar") }
         }
 
         if (exams.isEmpty()) {
-            Text("Nenhuma prova cadastrada ainda. Toque em \"Nova prova\" para começar.")
+            Text("Nenhum gabarito cadastrado ainda. Toque em \"Novo gabarito\" para começar.")
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(exams, key = { it.id }) { exam ->
                     val lastOption = 'A' + exam.optionsPerQuestion - 1
                     Card(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(text = exam.name, style = MaterialTheme.typography.titleMedium)
-                                Text(text = "${exam.questionCount} questões (A–$lastOption)")
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(text = exam.name, style = MaterialTheme.typography.titleMedium)
+                            Text(text = "${exam.questionCount} questões (A–$lastOption)")
+                            Row {
+                                TextButton(onClick = { onOpen(exam) }) { Text("Resultados") }
+                                TextButton(onClick = { onSheet(exam) }) { Text("Folha") }
+                                TextButton(onClick = { examToDelete = exam }) { Text("Apagar") }
                             }
-                            TextButton(onClick = { onOpen(exam) }) { Text("Resultados") }
-                            TextButton(onClick = { examToDelete = exam }) { Text("Apagar") }
                         }
                     }
                 }
@@ -85,8 +84,8 @@ fun ExamListScreen(
     examToDelete?.let { exam ->
         AlertDialog(
             onDismissRequest = { examToDelete = null },
-            title = { Text("Apagar prova?") },
-            text = { Text("\"${exam.name}\" e todos os resultados dela serão apagados.") },
+            title = { Text("Apagar gabarito?") },
+            text = { Text("\"${exam.name}\" e todos os resultados dele serão apagados.") },
             confirmButton = {
                 TextButton(onClick = {
                     onDelete(exam)

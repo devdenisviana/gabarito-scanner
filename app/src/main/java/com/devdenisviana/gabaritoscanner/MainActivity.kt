@@ -40,6 +40,7 @@ import com.devdenisviana.gabaritoscanner.ui.exam.ExamResultsScreen
 import com.devdenisviana.gabaritoscanner.ui.scan.ScanResultScreen
 import com.devdenisviana.gabaritoscanner.ui.theme.GabaritoScannerTheme
 import java.io.File
+import com.devdenisviana.gabaritoscanner.data.toSheetProfile
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,6 +74,7 @@ fun GabaritoApp(
 ) {
     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
     val exams by viewModel.exams.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     BackHandler(enabled = screen != Screen.Home) {
         screen = when (screen) {
@@ -95,6 +97,7 @@ fun GabaritoApp(
                 screen = Screen.Results(exam)
             },
             onNewExam = { screen = Screen.ExamForm },
+            onSheet = { exam -> openSheetPdf(context, exam.toSheetProfile()) },
             onDelete = viewModel::deleteExam,
             onBack = { screen = Screen.Home },
             modifier = modifier,
@@ -162,7 +165,7 @@ fun HomeScreen(
     ) {
         Text(text = "Gabarito Scanner")
         Button(onClick = onExams) {
-            Text(text = "Provas")
+            Text(text = "Gabaritos")
         }
         Button(onClick = onScan) {
             Text(text = "Ler gabarito (câmera)")
