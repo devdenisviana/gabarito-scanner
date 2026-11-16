@@ -27,6 +27,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.devdenisviana.gabaritoscanner.data.ExamEntity
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.FilterChip
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.text.input.KeyboardType
 
 /** Lists the registered exams, with options to create and delete them. */
 @Composable
@@ -96,29 +101,33 @@ fun ExamListScreen(
 }
 
 /**
- * Form to register an exam. [onSave] returns an error message to display,
- * or null when the exam was created (the screen then goes back).
+ * Form to register an answer key. [onSave] returns an error message to display,
+ * or null when it was created (the screen then goes back).
  */
 @Composable
 fun ExamFormScreen(
-    questionCount: Int,
-    onSave: (name: String, answerKey: String) -> String?,
+    onSave: (name: String, answerKey: String, questionCount: Int, optionsPerQuestion: Int) -> String?,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var name by remember { mutableStateOf("") }
+    var questionCountText by remember { mutableStateOf("20") }
+    var options by remember { mutableIntStateOf(5) }
     var answerKey by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
 
+    val questionCount = questionCountText.toIntOrNull() ?: 0
     val typed = answerKey.count { !it.isWhitespace() }
+    val lastLetter = 'A' + options - 1
 
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(text = "Nova prova", style = MaterialTheme.typography.headlineSmall)
+        Text(text = "Novo gabarito", style = MaterialTheme.typography.headlineSmall)
 
         OutlinedTextField(
             value = name,
@@ -126,10 +135,37 @@ fun ExamFormScreen(
                 name = it
                 error = null
             },
-            label = { Text("Nome da prova") },
+            label = { Text("Nome do gabarito") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
+
+        OutlinedTextField(
+            value = questionCountText,
+            onValueChange = { text ->
+                questionCountText = text.filter { it.isDigit() }.take(3)
+                error = null
+            },
+            label = { Text("Quantidade de questões") },
+            supportingText = { Text("De 1 a 100") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Text(text = "Alternativas por questão")
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            for (count in 2..5) {
+                FilterChip(
+                    selected = options == count,
+                    onClick = {
+                        options = count
+                        error = null
+                    },
+                    label = { Text("A–${'A' + count - 1}") },
+                )
+            }
+        }
 
         OutlinedTextField(
             value = answerKey,
@@ -137,8 +173,10 @@ fun ExamFormScreen(
                 answerKey = it.uppercase()
                 error = null
             },
-            label = { Text("Gabarito oficial") },
-            supportingText = { Text("$typed / $questionCount respostas. Ex.: ABCDE ABCDE ...") },
+            label = { Text("Respostas do gabarito") },
+            supportingText = {
+                Text("$typed / $questionCount respostas, letras de A a $lastLetter. Ex.: ABCD ABCD")
+            },
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
             modifier = Modifier.fillMaxWidth(),
         )
@@ -147,7 +185,7 @@ fun ExamFormScreen(
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(onClick = {
-                val message = onSave(name, answerKey)
+                val message = onSave(name, answerKey, questionCount, options)
                 if (message == null) onBack() else error = message
             }) { Text("Salvar") }
             OutlinedButton(onClick = onBack) { Text("Cancelar") }

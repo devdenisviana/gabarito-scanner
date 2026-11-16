@@ -46,11 +46,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /** Creates an exam. Returns an error message to show the user, or null on success. */
-    fun createExam(name: String, answerKeyText: String): String? {
+    fun createExam(
+        name: String,
+        answerKeyText: String,
+        questionCount: Int = SheetProfile.DEFAULT.questionCount,
+        optionsPerQuestion: Int = SheetProfile.DEFAULT.optionsPerQuestion,
+    ): String? {
         val trimmedName = name.trim()
-        if (trimmedName.isEmpty()) return "Informe o nome da prova."
+        if (trimmedName.isEmpty()) return "Informe o nome do gabarito."
+        if (questionCount !in 1..100) return "O número de questões deve ficar entre 1 e 100."
+        if (optionsPerQuestion !in 2..5) return "O número de alternativas deve ficar entre 2 e 5."
 
-        val profile = SheetProfile.DEFAULT
+        val profile = SheetProfile.of(questionCount, optionsPerQuestion)
         val key = try {
             AnswerKey.parse(answerKeyText, profile)
         } catch (e: IllegalArgumentException) {

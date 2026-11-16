@@ -101,7 +101,6 @@ fun GabaritoApp(
         )
 
         Screen.ExamForm -> ExamFormScreen(
-            questionCount = SheetProfile.DEFAULT.questionCount,
             onSave = viewModel::createExam,
             onBack = { screen = Screen.Exams },
             modifier = modifier,
