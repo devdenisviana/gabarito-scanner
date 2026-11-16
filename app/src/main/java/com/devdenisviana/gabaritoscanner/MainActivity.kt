@@ -39,6 +39,7 @@ import com.devdenisviana.gabaritoscanner.ui.exam.ExamFormScreen
 import com.devdenisviana.gabaritoscanner.ui.exam.ExamListScreen
 import com.devdenisviana.gabaritoscanner.ui.exam.ExamPickerScreen
 import com.devdenisviana.gabaritoscanner.ui.exam.ExamResultsScreen
+import com.devdenisviana.gabaritoscanner.ui.exam.KeySheetScreen
 import com.devdenisviana.gabaritoscanner.ui.scan.ScanResultScreen
 import com.devdenisviana.gabaritoscanner.ui.theme.GabaritoScannerTheme
 import java.io.File
@@ -66,6 +67,8 @@ sealed interface Screen {
     data class Results(val exam: ExamEntity) : Screen
     data class Camera(val exam: ExamEntity) : Screen
     data class Photo(val file: File, val exam: ExamEntity) : Screen
+    data class KeyCamera(val profile: SheetProfile) : Screen
+    data class KeyPhoto(val file: File, val profile: SheetProfile) : Screen
 }
 
 @Composable
@@ -81,6 +84,7 @@ fun GabaritoApp(
     BackHandler(enabled = screen != Screen.Home) {
         screen = when (screen) {
             Screen.ExamForm, is Screen.Results -> Screen.Exams
+            is Screen.KeyCamera, is Screen.KeyPhoto -> Screen.ExamForm
             else -> Screen.Home
         }
     }
@@ -111,7 +115,9 @@ fun GabaritoApp(
         Screen.ExamForm -> ExamFormScreen(
             draft = draft,
             onSave = viewModel::createExam,
-            onReadFromSheet = { _, _ -> },
+            onReadFromSheet = { questionCount, options ->
+                screen = Screen.KeyCamera(SheetProfile.of(questionCount, options))
+            },
             onBack = { screen = Screen.Exams },
             modifier = modifier,
         )
@@ -153,6 +159,24 @@ fun GabaritoApp(
             },
             onRetake = { screen = Screen.Camera(current.exam) },
             onClose = { screen = Screen.Home },
+            modifier = modifier,
+        )
+
+        is Screen.KeyCamera -> CameraScreen(
+            onPhotoCaptured = { file -> screen = Screen.KeyPhoto(file, current.profile) },
+            onClose = { screen = Screen.ExamForm },
+            modifier = modifier,
+        )
+
+        is Screen.KeyPhoto -> KeySheetScreen(
+            file = current.file,
+            profile = current.profile,
+            onUse = { answers ->
+                draft.answerKey = answers
+                screen = Screen.ExamForm
+            },
+            onRetake = { screen = Screen.KeyCamera(current.profile) },
+            onCancel = { screen = Screen.ExamForm },
             modifier = modifier,
         )
     }
