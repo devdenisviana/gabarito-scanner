@@ -3,12 +3,15 @@ package com.devdenisviana.gabaritoscanner.ui.exam
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
@@ -16,7 +19,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.devdenisviana.gabaritoscanner.data.ExamEntity
 import com.devdenisviana.gabaritoscanner.ui.components.AppHeader
@@ -34,6 +36,7 @@ fun ExamPickerScreen(
     Column(modifier = modifier.fillMaxSize()) {
         AppHeader(
             title = "Escolha o gabarito",
+            icon = Icons.Filled.Checklist,
             subtitle = "Contra qual gabarito corrigir?",
             onBack = onBack,
         )
@@ -57,7 +60,7 @@ fun ExamPickerScreen(
                 }
             } else {
                 LazyColumn(
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+                    contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(exams, key = { it.id }) { exam ->

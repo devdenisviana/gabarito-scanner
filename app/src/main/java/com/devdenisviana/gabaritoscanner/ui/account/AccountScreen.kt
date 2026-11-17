@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
@@ -55,6 +57,7 @@ fun AccountScreen(
     Column(modifier = modifier.fillMaxSize()) {
         AppHeader(
             title = "Conta",
+            icon = Icons.Filled.AccountCircle,
             subtitle = if (userEmail != null) {
                 "Sincronize seus resultados"
             } else if (creating) {

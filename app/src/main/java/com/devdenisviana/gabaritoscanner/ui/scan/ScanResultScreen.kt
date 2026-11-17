@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -124,6 +125,7 @@ fun ScanResultScreen(
     Column(modifier = modifier.fillMaxSize()) {
         AppHeader(
             title = "Correção",
+            icon = Icons.Filled.TaskAlt,
             subtitle = exam.name,
             onBack = onClose,
         )

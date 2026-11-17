@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
@@ -97,6 +99,7 @@ fun KeySheetScreen(
     Column(modifier = modifier.fillMaxSize()) {
         AppHeader(
             title = "Folha do gabarito",
+            icon = Icons.Filled.Key,
             subtitle = "Confira as respostas lidas",
             onBack = onCancel,
         )

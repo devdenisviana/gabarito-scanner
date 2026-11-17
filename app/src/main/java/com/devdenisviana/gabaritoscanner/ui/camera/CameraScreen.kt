@@ -41,6 +41,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -103,6 +104,7 @@ fun CameraScreen(
     Column(modifier = modifier.fillMaxSize()) {
         AppHeader(
             title = "Fotografar a folha",
+            icon = Icons.Filled.CameraAlt,
             subtitle = "Enquadre a folha inteira",
             onBack = onClose,
         )

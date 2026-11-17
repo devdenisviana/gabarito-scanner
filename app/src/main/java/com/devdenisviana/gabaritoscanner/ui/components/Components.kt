@@ -1,5 +1,8 @@
 package com.devdenisviana.gabaritoscanner.ui.components
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +25,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,6 +37,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -36,8 +45,8 @@ import com.devdenisviana.gabaritoscanner.ui.theme.HeaderEnd
 import com.devdenisviana.gabaritoscanner.ui.theme.HeaderStart
 
 /**
- * Vivid gradient header at the top of a screen, with optional subtitle, app icon and back arrow.
- * Use [large] for the home screen.
+ * Vivid gradient header at the top of a screen, with optional subtitle, icon and back arrow.
+ * The icon pops in softly when the screen opens. Use [large] for the home screen.
  */
 @Composable
 fun AppHeader(
@@ -90,9 +99,25 @@ fun AppHeader(
                 }
             }
             if (icon != null) {
+                var shown by remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) { shown = true }
+                val scale by animateFloatAsState(
+                    targetValue = if (shown) 1f else 0.6f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessLow,
+                    ),
+                    label = "headerIconScale",
+                )
+
                 Box(
                     modifier = Modifier
                         .size(56.dp)
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                            alpha = ((scale - 0.6f) / 0.4f).coerceIn(0f, 1f)
+                        }
                         .clip(RoundedCornerShape(16.dp))
                         .background(Color.White.copy(alpha = 0.22f)),
                     contentAlignment = Alignment.Center,

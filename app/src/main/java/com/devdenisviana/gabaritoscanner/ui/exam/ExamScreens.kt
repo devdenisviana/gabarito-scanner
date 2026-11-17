@@ -19,6 +19,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -42,7 +44,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.devdenisviana.gabaritoscanner.data.ExamEntity
 import com.devdenisviana.gabaritoscanner.domain.student.StudentTag
@@ -69,6 +70,7 @@ fun ExamListScreen(
     Column(modifier = modifier.fillMaxSize()) {
         AppHeader(
             title = "Gabaritos",
+            icon = Icons.Filled.Description,
             subtitle = "Cadastre gabaritos e gere as folhas",
             onBack = onBack,
         )
@@ -88,8 +90,6 @@ fun ExamListScreen(
                         val lastOption = 'A' + exam.optionsPerQuestion - 1
                         ElevatedCard(modifier = Modifier.fillMaxWidth()) {
                             Column(modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 16.dp, bottom = 4.dp)) {
-                                Text(text = exam.name, style = MaterialTheme.typography.titleMedium)
-                                Text(text = exam.name, style = MaterialTheme.typography.titleMedium)
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     MiniSheet(questionCount = exam.questionCount, columns = exam.columns)
                                     Spacer(modifier = Modifier.width(12.dp))
@@ -227,6 +227,7 @@ fun ExamFormScreen(
     Column(modifier = modifier.fillMaxSize()) {
         AppHeader(
             title = "Novo gabarito",
+            icon = Icons.Filled.EditNote,
             subtitle = "Escolha o tamanho e informe as respostas",
             onBack = onBack,
         )

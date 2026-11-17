@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -99,6 +101,7 @@ fun QuickGradeScreen(
     Column(modifier = modifier.fillMaxSize()) {
         AppHeader(
             title = "Correção rápida",
+            icon = Icons.Filled.Bolt,
             subtitle = "${exam.name} · Folha $sheetNumber",
             onBack = onClose,
         )

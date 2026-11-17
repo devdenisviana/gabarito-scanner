@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
@@ -32,19 +33,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.devdenisviana.gabaritoscanner.data.ExamEntity
 import com.devdenisviana.gabaritoscanner.data.ScanResultEntity
 import com.devdenisviana.gabaritoscanner.ui.components.AppHeader
+import com.devdenisviana.gabaritoscanner.ui.components.EmptyState
 import com.devdenisviana.gabaritoscanner.ui.theme.ScoreBadDark
 import com.devdenisviana.gabaritoscanner.ui.theme.ScoreBadLight
 import com.devdenisviana.gabaritoscanner.ui.theme.ScoreGoodDark
 import com.devdenisviana.gabaritoscanner.ui.theme.ScoreGoodLight
 import java.text.DateFormat
 import java.util.Date
-import com.devdenisviana.gabaritoscanner.ui.components.EmptyState
 
 /** Green with 60% of correct answers or more, red below that. */
 @Composable
@@ -75,6 +75,7 @@ fun ExamResultsScreen(
     Column(modifier = modifier.fillMaxSize()) {
         AppHeader(
             title = "Resultados",
+            icon = Icons.Filled.Assessment,
             subtitle = exam.name,
             onBack = onBack,
         )
