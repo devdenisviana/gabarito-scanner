@@ -24,7 +24,7 @@ Projeto de portfólio, feito para uso real por professores da rede municipal (pr
 <table>
   <tr>
     <td align="center"><img src="docs/screenshots/1.jpeg" width="200" alt="Tela inicial"><br><sub>Tela inicial</sub></td>
-    <td align="center"><img src="docs/screenshots/2.jpeg" width="200" alt="Tela inicial"><br><sub>Tela inicial</sub></td>
+    
     <td align="center"><img src="docs/screenshots/3.jpeg" width="200" alt="Lista de gabaritos"><br><sub>Gabaritos</sub></td>
     <td align="center"><img src="docs/screenshots/4.jpeg" width="200" alt="Novo gabarito"><br><sub>Novo gabarito</sub></td>
   </tr>
