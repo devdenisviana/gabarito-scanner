@@ -207,7 +207,7 @@ fun GabaritoApp(
             onNext = { screen = Screen.QuickCamera(current.exam, current.sheetNumber + 1) },
             onRetake = { screen = Screen.QuickCamera(current.exam, current.sheetNumber) },
             onClose = { screen = Screen.Home },
-            modifier = modifier,
+
         )
 
         is Screen.KeyCamera -> CameraScreen(
@@ -225,7 +225,7 @@ fun GabaritoApp(
             },
             onRetake = { screen = Screen.KeyCamera(current.profile) },
             onCancel = { screen = Screen.ExamForm },
-            modifier = modifier,
+
         )
     }
 }

@@ -3,14 +3,24 @@ package com.devdenisviana.gabaritoscanner.ui.exam
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +33,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.devdenisviana.gabaritoscanner.domain.sheet.SheetLayout
 import com.devdenisviana.gabaritoscanner.domain.sheet.SheetProfile
@@ -32,6 +44,10 @@ import com.devdenisviana.gabaritoscanner.scan.BubbleReader
 import com.devdenisviana.gabaritoscanner.scan.ScanOverlay
 import com.devdenisviana.gabaritoscanner.scan.SheetAligner
 import com.devdenisviana.gabaritoscanner.scan.toGrayImage
+import com.devdenisviana.gabaritoscanner.ui.components.AppHeader
+import com.devdenisviana.gabaritoscanner.ui.components.Staggered
+import com.devdenisviana.gabaritoscanner.ui.components.TabbedContent
+import com.devdenisviana.gabaritoscanner.ui.components.warnColor
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -78,44 +94,137 @@ fun KeySheetScreen(
         }
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
+    Column(modifier = modifier.fillMaxSize()) {
+        AppHeader(
+            title = "Folha do gabarito",
+            subtitle = "Confira as respostas lidas",
+            onBack = onCancel,
+        )
+
         when (val current = state) {
             KeyScanState.Loading -> {
-                CircularProgressIndicator()
-                Text("Processando a folha...")
-            }
-
-            is KeyScanState.Done -> {
-                val unsure = current.text.count { it == KeyDraft.UNSURE }
-
-                Text("Folha do gabarito lida")
-                Image(
-                    bitmap = current.overlay.asImageBitmap(),
-                    contentDescription = "Folha lida",
-                    contentScale = ContentScale.Fit,
+                Column(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth(),
-                )
-                Text(current.text)
-                if (unsure > 0) {
-                    Text("$unsure questão(ões) em branco ou com marcação dupla, mostradas como ?. Você poderá corrigir no formulário.")
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("Processando a folha...")
                 }
-                Button(onClick = { onUse(current.text) }) { Text("Usar estas respostas") }
             }
 
-            is KeyScanState.Error -> Text(current.message)
+            is KeyScanState.Done -> {
+                TabbedContent(
+                    titles = listOf("Respostas", "Folha"),
+                    modifier = Modifier.weight(1f),
+                ) { tab ->
+                    if (tab == 0) {
+                        KeyAnswersTab(current.text)
+                    } else {
+                        val image = remember(current.overlay) { current.overlay.asImageBitmap() }
+                        Image(
+                            bitmap = image,
+                            contentDescription = "Folha lida",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                        )
+                    }
+                }
+            }
+
+            is KeyScanState.Error -> {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(
+                        text = current.message,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            OutlinedButton(onClick = onCancel) { Text("Cancelar") }
-            OutlinedButton(onClick = onRetake) { Text("Tirar outra") }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            (state as? KeyScanState.Done)?.let { done ->
+                Button(onClick = { onUse(done.text) }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Usar estas respostas")
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = onRetake, modifier = Modifier.weight(1f)) {
+                    Text("Tirar outra")
+                }
+                OutlinedButton(onClick = onCancel, modifier = Modifier.weight(1f)) {
+                    Text("Cancelar")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun KeyAnswersTab(text: String, modifier: Modifier = Modifier) {
+    val letters = text.filter { !it.isWhitespace() }.toList()
+    val unsure = letters.count { it == KeyDraft.UNSURE }
+    val amber = warnColor()
+
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (unsure > 0) {
+            item {
+                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "$unsure questão(ões) em branco ou com marcação dupla, mostradas como ?. " +
+                                "Você poderá corrigir no formulário.",
+                        modifier = Modifier.padding(16.dp),
+                        color = amber,
+                    )
+                }
+            }
+        }
+        itemsIndexed(letters) { index, letter ->
+            val isUnsure = letter == KeyDraft.UNSURE
+            val color = if (isUnsure) amber else MaterialTheme.colorScheme.primary
+            Staggered(index) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(color.copy(alpha = 0.10f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "Questão ${index + 1}",
+                        modifier = Modifier.weight(1f),
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = letter.toString(),
+                        color = color,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
         }
     }
 }
