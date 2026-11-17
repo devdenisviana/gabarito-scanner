@@ -108,7 +108,7 @@ fun GabaritoApp(
                 viewModel.selectExam(exam.id)
                 screen = Screen.Results(exam)
             },
-            onSheet = { exam -> openSheetPdf(context, exam.toSheetProfile()) },
+            onSheet = { exam, student -> openSheetPdf(context, exam.toSheetProfile(), student) },
             onNewExam = {
                 draft.clear()
                 screen = Screen.ExamForm
@@ -243,7 +243,7 @@ fun HomeScreen(
         Button(onClick = onExams) {
             Text(text = "Gabaritos")
         }
-        Button(onClick = { openSheetPdf(context, SheetProfile.DEFAULT, StudentTag("2024001", "Ana Souza")) }) {
+        Button(onClick = { openSheetPdf(context, SheetProfile.DEFAULT) }) {
             Text(text = "Gerar folha de respostas (PDF)")
         }
     }

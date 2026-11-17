@@ -32,19 +32,40 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FilterChip
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.text.input.KeyboardType
+import com.devdenisviana.gabaritoscanner.domain.student.StudentTag
+
+
+
+/** Form fields kept outside the screen, so they survive a trip to the camera. */
+class ExamDraft {
+    var name by mutableStateOf("")
+    var questionCountText by mutableStateOf("20")
+    var options by mutableIntStateOf(5)
+    var answerKey by mutableStateOf("")
+
+    fun clear() {
+        name = ""
+        questionCountText = "20"
+        options = 5
+        answerKey = ""
+    }
+}
 
 /** Lists the registered answer keys, with options to create, print the sheet and delete them. */
 @Composable
 fun ExamListScreen(
     exams: List<ExamEntity>,
     onOpen: (ExamEntity) -> Unit,
-    onSheet: (ExamEntity) -> Unit,
+    onSheet: (ExamEntity, StudentTag?) -> Unit,
     onNewExam: () -> Unit,
     onDelete: (ExamEntity) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var examToDelete by remember { mutableStateOf<ExamEntity?>(null) }
+    var sheetExam by remember { mutableStateOf<ExamEntity?>(null) }
+    var sheetName by remember { mutableStateOf("") }
+    var sheetCode by remember { mutableStateOf("") }
 
     Column(
         modifier = modifier
@@ -71,7 +92,11 @@ fun ExamListScreen(
                             Text(text = "${exam.questionCount} questões (A–$lastOption)")
                             Row {
                                 TextButton(onClick = { onOpen(exam) }) { Text("Resultados") }
-                                TextButton(onClick = { onSheet(exam) }) { Text("Folha") }
+                                TextButton(onClick = {
+                                    sheetName = ""
+                                    sheetCode = ""
+                                    sheetExam = exam
+                                }) { Text("Folha") }
                                 TextButton(onClick = { examToDelete = exam }) { Text("Apagar") }
                             }
                         }
@@ -79,6 +104,45 @@ fun ExamListScreen(
                 }
             }
         }
+    }
+
+    sheetExam?.let { exam ->
+        val filled = sheetName.isNotBlank() && sheetCode.isNotBlank()
+        val empty = sheetName.isBlank() && sheetCode.isBlank()
+        AlertDialog(
+            onDismissRequest = { sheetExam = null },
+            title = { Text("Folha de respostas") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Deixe em branco para uma folha sem aluno, ou preencha nome e matrícula para gerar a folha com o QR code do aluno.")
+                    OutlinedTextField(
+                        value = sheetName,
+                        onValueChange = { sheetName = it },
+                        label = { Text("Nome do aluno") },
+                        singleLine = true,
+                    )
+                    OutlinedTextField(
+                        value = sheetCode,
+                        onValueChange = { sheetCode = it },
+                        label = { Text("Matrícula") },
+                        singleLine = true,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = filled || empty,
+                    onClick = {
+                        val student = if (filled) StudentTag(sheetCode.trim(), sheetName.trim()) else null
+                        onSheet(exam, student)
+                        sheetExam = null
+                    },
+                ) { Text("Gerar PDF") }
+            },
+            dismissButton = {
+                TextButton(onClick = { sheetExam = null }) { Text("Cancelar") }
+            },
+        )
     }
 
     examToDelete?.let { exam ->
@@ -98,22 +162,6 @@ fun ExamListScreen(
         )
     }
 }
-
-/** Form fields kept outside the screen, so they survive a trip to the camera. */
-class ExamDraft {
-    var name by mutableStateOf("")
-    var questionCountText by mutableStateOf("20")
-    var options by mutableIntStateOf(5)
-    var answerKey by mutableStateOf("")
-
-    fun clear() {
-        name = ""
-        questionCountText = "20"
-        options = 5
-        answerKey = ""
-    }
-}
-
 /**
  * Form to register an answer key. [onSave] returns an error message to display,
  * or null when it was created (the screen then goes back).
