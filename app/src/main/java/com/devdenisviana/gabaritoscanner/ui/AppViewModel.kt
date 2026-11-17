@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.devdenisviana.gabaritoscanner.data.cloud.AuthRepository
+import com.devdenisviana.gabaritoscanner.data.cloud.CloudSync
+import kotlinx.coroutines.TimeoutCancellationException
 
 /** Holds the app state and talks to the database (MVVM). */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -43,6 +45,36 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         auth.signUp(email, password, onResult)
 
     fun signOut() = auth.signOut()
+
+    private val cloud = CloudSync(examDao, resultDao)
+
+    /** Results still waiting to be uploaded. */
+    val unsyncedCount: StateFlow<Int> = resultDao.observeUnsyncedCount()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+    /** Uploads pending data to the cloud. [onResult] receives a message to show the user. */
+    fun sync(onResult: (String) -> Unit) {
+        val userId = auth.userId
+        if (userId == null) {
+            onResult("Entre na sua conta antes de sincronizar.")
+            return
+        }
+        viewModelScope.launch {
+            val message = try {
+                val sent = cloud.upload(userId)
+                if (sent == 0) {
+                    "Tudo já estava sincronizado."
+                } else {
+                    "Sincronizado: $sent resultado(s) enviado(s)."
+                }
+            } catch (e: TimeoutCancellationException) {
+                "Sem conexão com a internet. Tente de novo mais tarde."
+            } catch (e: Exception) {
+                "Não foi possível sincronizar: ${e.message}"
+            }
+            onResult(message)
+        }
+    }
 
     /** All exams, newest first. Updates automatically when the table changes. */
     val exams: StateFlow<List<ExamEntity>> = examDao.observeAll()

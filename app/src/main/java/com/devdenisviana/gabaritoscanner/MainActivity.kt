@@ -86,6 +86,7 @@ fun GabaritoApp(
     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
     val exams by viewModel.exams.collectAsStateWithLifecycle()
     val userEmail by viewModel.userEmail.collectAsStateWithLifecycle()
+    val unsyncedCount by viewModel.unsyncedCount.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val draft = remember { ExamDraft() }
 
@@ -109,8 +110,10 @@ fun GabaritoApp(
 
         Screen.Account -> AccountScreen(
             userEmail = userEmail,
+            unsyncedCount = unsyncedCount,
             onSignIn = viewModel::signIn,
             onSignUp = viewModel::signUp,
+            onSync = viewModel::sync,
             onSignOut = viewModel::signOut,
             onBack = { screen = Screen.Home },
             modifier = modifier,

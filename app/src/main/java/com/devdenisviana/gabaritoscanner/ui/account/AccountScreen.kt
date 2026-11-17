@@ -26,14 +26,16 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 
 /**
- * Teacher account: sign in, create an account or sign out.
+ * Teacher account: sign in, create an account, sync with the cloud or sign out.
  * [onSignIn] / [onSignUp] report back with an error message, or null on success.
  */
 @Composable
 fun AccountScreen(
     userEmail: String?,
+    unsyncedCount: Int,
     onSignIn: (email: String, password: String, onResult: (String?) -> Unit) -> Unit,
     onSignUp: (email: String, password: String, onResult: (String?) -> Unit) -> Unit,
+    onSync: (onResult: (String) -> Unit) -> Unit,
     onSignOut: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -44,6 +46,8 @@ fun AccountScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
+    var syncing by remember { mutableStateOf(false) }
+    var syncMessage by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = modifier
@@ -56,9 +60,29 @@ fun AccountScreen(
 
         if (userEmail != null) {
             Text("Conectado como $userEmail")
-            Text("Seus gabaritos e resultados ficam guardados no celular. A sincronização online será ligada no próximo passo.")
+            Text(
+                if (unsyncedCount == 0) {
+                    "Nenhum resultado aguardando envio."
+                } else {
+                    "$unsyncedCount resultado(s) aguardando envio."
+                },
+            )
+            Button(
+                enabled = !syncing,
+                onClick = {
+                    syncing = true
+                    syncMessage = null
+                    onSync { message ->
+                        syncing = false
+                        syncMessage = message
+                    }
+                },
+            ) { Text(if (syncing) "Enviando..." else "Sincronizar agora") }
+
+            syncMessage?.let { Text(it) }
+
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = onSignOut) { Text("Sair") }
+                OutlinedButton(onClick = onSignOut) { Text("Sair") }
                 OutlinedButton(onClick = onBack) { Text("Voltar") }
             }
         } else {
