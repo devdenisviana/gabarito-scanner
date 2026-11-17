@@ -31,8 +31,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.devdenisviana.gabaritoscanner.data.ExamEntity
 import com.devdenisviana.gabaritoscanner.data.toSheetProfile
 import com.devdenisviana.gabaritoscanner.domain.sheet.SheetProfile
+import com.devdenisviana.gabaritoscanner.domain.student.StudentTag
 import com.devdenisviana.gabaritoscanner.render.SheetPdfExporter
 import com.devdenisviana.gabaritoscanner.ui.AppViewModel
+import com.devdenisviana.gabaritoscanner.ui.account.AccountScreen
 import com.devdenisviana.gabaritoscanner.ui.camera.CameraScreen
 import com.devdenisviana.gabaritoscanner.ui.exam.ExamDraft
 import com.devdenisviana.gabaritoscanner.ui.exam.ExamFormScreen
@@ -44,7 +46,6 @@ import com.devdenisviana.gabaritoscanner.ui.scan.QuickGradeScreen
 import com.devdenisviana.gabaritoscanner.ui.scan.ScanResultScreen
 import com.devdenisviana.gabaritoscanner.ui.theme.GabaritoScannerTheme
 import java.io.File
-import com.devdenisviana.gabaritoscanner.domain.student.StudentTag
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,6 +64,7 @@ class MainActivity : ComponentActivity() {
 /** The screens of the app (simple state-based navigation for now). */
 sealed interface Screen {
     data object Home : Screen
+    data object Account : Screen
     data object Exams : Screen
     data object ExamForm : Screen
     data object PickExam : Screen
@@ -83,6 +85,7 @@ fun GabaritoApp(
 ) {
     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
     val exams by viewModel.exams.collectAsStateWithLifecycle()
+    val userEmail by viewModel.userEmail.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val draft = remember { ExamDraft() }
 
@@ -96,9 +99,20 @@ fun GabaritoApp(
 
     when (val current = screen) {
         Screen.Home -> HomeScreen(
+            userEmail = userEmail,
             onExams = { screen = Screen.Exams },
             onScan = { screen = Screen.PickExam },
             onQuickScan = { screen = Screen.PickExamQuick },
+            onAccount = { screen = Screen.Account },
+            modifier = modifier,
+        )
+
+        Screen.Account -> AccountScreen(
+            userEmail = userEmail,
+            onSignIn = viewModel::signIn,
+            onSignUp = viewModel::signUp,
+            onSignOut = viewModel::signOut,
+            onBack = { screen = Screen.Home },
             modifier = modifier,
         )
 
@@ -219,9 +233,11 @@ fun GabaritoApp(
 
 @Composable
 fun HomeScreen(
+    userEmail: String?,
     onExams: () -> Unit,
     onScan: () -> Unit,
     onQuickScan: () -> Unit,
+    onAccount: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -245,6 +261,12 @@ fun HomeScreen(
         }
         Button(onClick = { openSheetPdf(context, SheetProfile.DEFAULT) }) {
             Text(text = "Gerar folha de respostas (PDF)")
+        }
+        Button(onClick = onAccount) {
+            Text(text = if (userEmail == null) "Entrar / criar conta" else "Conta")
+        }
+        if (userEmail != null) {
+            Text(text = "Conectado: $userEmail")
         }
     }
 }
