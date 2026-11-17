@@ -30,6 +30,7 @@ import com.devdenisviana.gabaritoscanner.data.ExamEntity
 import com.devdenisviana.gabaritoscanner.data.toAnswerKey
 import com.devdenisviana.gabaritoscanner.data.toSheetProfile
 import com.devdenisviana.gabaritoscanner.domain.sheet.SheetLayout
+import com.devdenisviana.gabaritoscanner.domain.student.StudentTag
 import com.devdenisviana.gabaritoscanner.grading.GradeResult
 import com.devdenisviana.gabaritoscanner.grading.Grader
 import com.devdenisviana.gabaritoscanner.scan.AlignResult
@@ -38,6 +39,7 @@ import com.devdenisviana.gabaritoscanner.scan.BubbleReader
 import com.devdenisviana.gabaritoscanner.scan.QuestionReading
 import com.devdenisviana.gabaritoscanner.scan.ScanOverlay
 import com.devdenisviana.gabaritoscanner.scan.SheetAligner
+import com.devdenisviana.gabaritoscanner.scan.StudentQrReader
 import com.devdenisviana.gabaritoscanner.scan.toGrayImage
 import java.io.File
 import kotlinx.coroutines.Dispatchers
@@ -49,6 +51,7 @@ private sealed interface ScanUiState {
         val overlay: Bitmap,
         val readings: List<QuestionReading>,
         val grade: GradeResult,
+        val student: StudentTag?,
     ) : ScanUiState
 
     data class Error(val message: String) : ScanUiState
@@ -57,6 +60,7 @@ private sealed interface ScanUiState {
 /**
  * Aligns the captured photo, reads the bubbles, grades them against [exam]
  * and lets the user save the result with the student's name.
+ * When the sheet carries a student QR code, name and code are filled in automatically.
  */
 @Composable
 fun ScanResultScreen(
@@ -78,7 +82,7 @@ fun ScanResultScreen(
     var saved by remember(file) { mutableStateOf(false) }
 
     LaunchedEffect(file, exam.id) {
-        state = withContext(Dispatchers.Default) {
+        val newState = withContext(Dispatchers.Default) {
             val photo = BitmapFactory.decodeFile(file.absolutePath)
             if (photo == null) {
                 ScanUiState.Error("Não foi possível abrir a foto.")
@@ -89,9 +93,21 @@ fun ScanResultScreen(
                         val layout = SheetLayout(exam.toSheetProfile())
                         val readings = BubbleReader(layout).read(result.sheet.toGrayImage())
                         val overlay = ScanOverlay.draw(result.sheet, layout, readings)
-                        ScanUiState.Done(overlay, readings, Grader.grade(exam.toAnswerKey(), readings))
+                        ScanUiState.Done(
+                            overlay = overlay,
+                            readings = readings,
+                            grade = Grader.grade(exam.toAnswerKey(), readings),
+                            student = StudentQrReader.read(result.sheet),
+                        )
                     }
                 }
+            }
+        }
+        state = newState
+        if (newState is ScanUiState.Done) {
+            newState.student?.let {
+                studentName = it.name
+                studentCode = it.code
             }
         }
     }
@@ -116,6 +132,9 @@ fun ScanResultScreen(
                 Text("Prova: ${exam.name}")
                 Text("Acertos: ${grade.correct}   Erros: ${grade.errors}   Nota: ${"%.1f".format(grade.score10)}")
                 Text("(erros: ${grade.wrong} erradas, ${grade.blank} em branco, ${grade.multiple} duplas)")
+                if (current.student != null) {
+                    Text("Aluno identificado pelo QR code")
+                }
                 Image(
                     bitmap = current.overlay.asImageBitmap(),
                     contentDescription = "Folha lida",
