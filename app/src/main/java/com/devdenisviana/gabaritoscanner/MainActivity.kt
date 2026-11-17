@@ -40,6 +40,7 @@ import com.devdenisviana.gabaritoscanner.ui.exam.ExamListScreen
 import com.devdenisviana.gabaritoscanner.ui.exam.ExamPickerScreen
 import com.devdenisviana.gabaritoscanner.ui.exam.ExamResultsScreen
 import com.devdenisviana.gabaritoscanner.ui.exam.KeySheetScreen
+import com.devdenisviana.gabaritoscanner.ui.scan.QuickGradeScreen
 import com.devdenisviana.gabaritoscanner.ui.scan.ScanResultScreen
 import com.devdenisviana.gabaritoscanner.ui.theme.GabaritoScannerTheme
 import java.io.File
@@ -64,9 +65,12 @@ sealed interface Screen {
     data object Exams : Screen
     data object ExamForm : Screen
     data object PickExam : Screen
+    data object PickExamQuick : Screen
     data class Results(val exam: ExamEntity) : Screen
     data class Camera(val exam: ExamEntity) : Screen
     data class Photo(val file: File, val exam: ExamEntity) : Screen
+    data class QuickCamera(val exam: ExamEntity, val sheetNumber: Int) : Screen
+    data class QuickPhoto(val file: File, val exam: ExamEntity, val sheetNumber: Int) : Screen
     data class KeyCamera(val profile: SheetProfile) : Screen
     data class KeyPhoto(val file: File, val profile: SheetProfile) : Screen
 }
@@ -93,6 +97,7 @@ fun GabaritoApp(
         Screen.Home -> HomeScreen(
             onExams = { screen = Screen.Exams },
             onScan = { screen = Screen.PickExam },
+            onQuickScan = { screen = Screen.PickExamQuick },
             modifier = modifier,
         )
 
@@ -133,6 +138,17 @@ fun GabaritoApp(
             modifier = modifier,
         )
 
+        Screen.PickExamQuick -> ExamPickerScreen(
+            exams = exams,
+            onPick = { exam -> screen = Screen.QuickCamera(exam, 1) },
+            onNewExam = {
+                draft.clear()
+                screen = Screen.ExamForm
+            },
+            onBack = { screen = Screen.Home },
+            modifier = modifier,
+        )
+
         is Screen.Results -> {
             val results by viewModel.results.collectAsStateWithLifecycle()
             ExamResultsScreen(
@@ -162,6 +178,24 @@ fun GabaritoApp(
             modifier = modifier,
         )
 
+        is Screen.QuickCamera -> CameraScreen(
+            onPhotoCaptured = { file ->
+                screen = Screen.QuickPhoto(file, current.exam, current.sheetNumber)
+            },
+            onClose = { screen = Screen.Home },
+            modifier = modifier,
+        )
+
+        is Screen.QuickPhoto -> QuickGradeScreen(
+            file = current.file,
+            exam = current.exam,
+            sheetNumber = current.sheetNumber,
+            onNext = { screen = Screen.QuickCamera(current.exam, current.sheetNumber + 1) },
+            onRetake = { screen = Screen.QuickCamera(current.exam, current.sheetNumber) },
+            onClose = { screen = Screen.Home },
+            modifier = modifier,
+        )
+
         is Screen.KeyCamera -> CameraScreen(
             onPhotoCaptured = { file -> screen = Screen.KeyPhoto(file, current.profile) },
             onClose = { screen = Screen.ExamForm },
@@ -186,6 +220,7 @@ fun GabaritoApp(
 fun HomeScreen(
     onExams: () -> Unit,
     onScan: () -> Unit,
+    onQuickScan: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -198,11 +233,14 @@ fun HomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(text = "Gabarito Scanner")
-        Button(onClick = onExams) {
-            Text(text = "Gabaritos")
+        Button(onClick = onQuickScan) {
+            Text(text = "Só corrigir (sem alunos)")
         }
         Button(onClick = onScan) {
             Text(text = "Ler gabarito (câmera)")
+        }
+        Button(onClick = onExams) {
+            Text(text = "Gabaritos")
         }
         Button(onClick = { openSheetPdf(context, SheetProfile.DEFAULT) }) {
             Text(text = "Gerar folha de respostas (PDF)")
