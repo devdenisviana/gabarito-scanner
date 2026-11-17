@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.devdenisviana.gabaritoscanner.data.cloud.AuthRepository
 
 /** Holds the app state and talks to the database (MVVM). */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -27,6 +28,21 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.get(application)
     private val examDao = database.examDao()
     private val resultDao = database.scanResultDao()
+
+
+    private val auth = AuthRepository()
+
+    /** E-mail of the signed-in teacher, or null when signed out. */
+    val userEmail: StateFlow<String?> = auth.userEmail
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    fun signIn(email: String, password: String, onResult: (String?) -> Unit) =
+        auth.signIn(email, password, onResult)
+
+    fun signUp(email: String, password: String, onResult: (String?) -> Unit) =
+        auth.signUp(email, password, onResult)
+
+    fun signOut() = auth.signOut()
 
     /** All exams, newest first. Updates automatically when the table changes. */
     val exams: StateFlow<List<ExamEntity>> = examDao.observeAll()

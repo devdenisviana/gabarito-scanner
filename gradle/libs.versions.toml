@@ -13,7 +13,7 @@ opencv = "4.13.0"
 room = "2.8.5"
 ksp = "2.3.10"
 zxing = "3.5.3"
-firebaseBom = "35.1.0"
+firebaseBom = "34.17.0"
 googleServices = "4.5.0"
 
 [libraries]
