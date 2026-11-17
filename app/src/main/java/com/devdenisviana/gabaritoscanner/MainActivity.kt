@@ -9,9 +9,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,8 +57,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             GabaritoScannerTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    GabaritoApp(modifier = Modifier.padding(innerPadding))
+                // Every screen handles the system bars itself (edge-to-edge).
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background,
+                ) {
+                    GabaritoApp()
                 }
             }
         }
@@ -73,6 +86,18 @@ sealed interface Screen {
     data class KeyPhoto(val file: File, val profile: SheetProfile) : Screen
 }
 
+/**
+ * How deep a screen is. Going to a deeper screen slides forward, going to a
+ * shallower one slides back, and the same depth just cross-fades.
+ */
+private fun Screen.depth(): Int = when (this) {
+    Screen.Home -> 0
+    Screen.Account, Screen.Exams, Screen.PickExam, Screen.PickExamQuick -> 1
+    Screen.ExamForm, is Screen.Results, is Screen.Camera, is Screen.Photo,
+    is Screen.QuickCamera, is Screen.QuickPhoto -> 2
+    is Screen.KeyCamera, is Screen.KeyPhoto -> 3
+}
+
 @Composable
 fun GabaritoApp(
     modifier: Modifier = Modifier,
@@ -93,140 +118,151 @@ fun GabaritoApp(
         }
     }
 
-    when (val current = screen) {
-        // The new home screen handles the system bars itself, so it gets no extra padding.
-        Screen.Home -> HomeScreen(
-            signedIn = userEmail != null,
-            onQuickScan = { screen = Screen.PickExamQuick },
-            onScan = { screen = Screen.PickExam },
-            onExams = { screen = Screen.Exams },
-            onPrintSheet = { openSheetPdf(context, SheetProfile.DEFAULT) },
-            onAccount = { screen = Screen.Account },
-        )
+    AnimatedContent(
+        targetState = screen,
+        modifier = modifier,
+        transitionSpec = {
+            val from = initialState.depth()
+            val to = targetState.depth()
+            when {
+                to > from ->
+                    (slideInHorizontally(tween(300)) { it / 4 } + fadeIn(tween(300))) togetherWith
+                            (slideOutHorizontally(tween(300)) { -it / 4 } + fadeOut(tween(200)))
 
-        Screen.Account -> AccountScreen(
-            userEmail = userEmail,
-            unsyncedCount = unsyncedCount,
-            onSignIn = viewModel::signIn,
-            onSignUp = viewModel::signUp,
-            onSync = viewModel::sync,
-            onSignOut = viewModel::signOut,
-            onBack = { screen = Screen.Home },
+                to < from ->
+                    (slideInHorizontally(tween(300)) { -it / 4 } + fadeIn(tween(300))) togetherWith
+                            (slideOutHorizontally(tween(300)) { it / 4 } + fadeOut(tween(200)))
 
-        )
+                else -> fadeIn(tween(250)) togetherWith fadeOut(tween(200))
+            }
+        },
+        label = "screens",
+    ) { current ->
+        // Each screen gets its own background, so two screens never show through each other.
+        Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+            when (current) {
+                Screen.Home -> HomeScreen(
+                    signedIn = userEmail != null,
+                    onQuickScan = { screen = Screen.PickExamQuick },
+                    onScan = { screen = Screen.PickExam },
+                    onExams = { screen = Screen.Exams },
+                    onPrintSheet = { openSheetPdf(context, SheetProfile.DEFAULT) },
+                    onAccount = { screen = Screen.Account },
+                )
 
-        Screen.Exams -> ExamListScreen(
-            exams = exams,
-            onOpen = { exam ->
-                viewModel.selectExam(exam.id)
-                screen = Screen.Results(exam)
-            },
-            onSheet = { exam, student -> openSheetPdf(context, exam.toSheetProfile(), student) },
-            onNewExam = {
-                draft.clear()
-                screen = Screen.ExamForm
-            },
-            onDelete = viewModel::deleteExam,
-            onBack = { screen = Screen.Home },
+                Screen.Account -> AccountScreen(
+                    userEmail = userEmail,
+                    unsyncedCount = unsyncedCount,
+                    onSignIn = viewModel::signIn,
+                    onSignUp = viewModel::signUp,
+                    onSync = viewModel::sync,
+                    onSignOut = viewModel::signOut,
+                    onBack = { screen = Screen.Home },
+                )
 
-        )
+                Screen.Exams -> ExamListScreen(
+                    exams = exams,
+                    onOpen = { exam ->
+                        viewModel.selectExam(exam.id)
+                        screen = Screen.Results(exam)
+                    },
+                    onSheet = { exam, student -> openSheetPdf(context, exam.toSheetProfile(), student) },
+                    onNewExam = {
+                        draft.clear()
+                        screen = Screen.ExamForm
+                    },
+                    onDelete = viewModel::deleteExam,
+                    onBack = { screen = Screen.Home },
+                )
 
-        Screen.ExamForm -> ExamFormScreen(
-            draft = draft,
-            onSave = viewModel::createExam,
-            onReadFromSheet = { questionCount, options ->
-                screen = Screen.KeyCamera(SheetProfile.of(questionCount, options))
-            },
-            onBack = { screen = Screen.Exams },
+                Screen.ExamForm -> ExamFormScreen(
+                    draft = draft,
+                    onSave = viewModel::createExam,
+                    onReadFromSheet = { questionCount, options ->
+                        screen = Screen.KeyCamera(SheetProfile.of(questionCount, options))
+                    },
+                    onBack = { screen = Screen.Exams },
+                )
 
-        )
+                Screen.PickExam -> ExamPickerScreen(
+                    exams = exams,
+                    onPick = { exam -> screen = Screen.Camera(exam) },
+                    onNewExam = {
+                        draft.clear()
+                        screen = Screen.ExamForm
+                    },
+                    onBack = { screen = Screen.Home },
+                )
 
-        Screen.PickExam -> ExamPickerScreen(
-            exams = exams,
-            onPick = { exam -> screen = Screen.Camera(exam) },
-            onNewExam = {
-                draft.clear()
-                screen = Screen.ExamForm
-            },
-            onBack = { screen = Screen.Home },
+                Screen.PickExamQuick -> ExamPickerScreen(
+                    exams = exams,
+                    onPick = { exam -> screen = Screen.QuickCamera(exam, 1) },
+                    onNewExam = {
+                        draft.clear()
+                        screen = Screen.ExamForm
+                    },
+                    onBack = { screen = Screen.Home },
+                )
 
-        )
+                is Screen.Results -> {
+                    val results by viewModel.results.collectAsStateWithLifecycle()
+                    ExamResultsScreen(
+                        exam = current.exam,
+                        results = results,
+                        onScan = { screen = Screen.Camera(current.exam) },
+                        onDelete = viewModel::deleteResult,
+                        onBack = { screen = Screen.Exams },
+                    )
+                }
 
-        Screen.PickExamQuick -> ExamPickerScreen(
-            exams = exams,
-            onPick = { exam -> screen = Screen.QuickCamera(exam, 1) },
-            onNewExam = {
-                draft.clear()
-                screen = Screen.ExamForm
-            },
-            onBack = { screen = Screen.Home },
+                is Screen.Camera -> CameraScreen(
+                    onPhotoCaptured = { file -> screen = Screen.Photo(file, current.exam) },
+                    onClose = { screen = Screen.Home },
+                )
 
-        )
+                is Screen.Photo -> ScanResultScreen(
+                    file = current.file,
+                    exam = current.exam,
+                    onSave = { name, code, readings, grade ->
+                        viewModel.saveResult(current.exam, name, code, readings, grade)
+                    },
+                    onRetake = { screen = Screen.Camera(current.exam) },
+                    onClose = { screen = Screen.Home },
+                )
 
-        is Screen.Results -> {
-            val results by viewModel.results.collectAsStateWithLifecycle()
-            ExamResultsScreen(
-                exam = current.exam,
-                results = results,
-                onScan = { screen = Screen.Camera(current.exam) },
-                onDelete = viewModel::deleteResult,
-                onBack = { screen = Screen.Exams },
+                is Screen.QuickCamera -> CameraScreen(
+                    onPhotoCaptured = { file ->
+                        screen = Screen.QuickPhoto(file, current.exam, current.sheetNumber)
+                    },
+                    onClose = { screen = Screen.Home },
+                )
 
-            )
+                is Screen.QuickPhoto -> QuickGradeScreen(
+                    file = current.file,
+                    exam = current.exam,
+                    sheetNumber = current.sheetNumber,
+                    onNext = { screen = Screen.QuickCamera(current.exam, current.sheetNumber + 1) },
+                    onRetake = { screen = Screen.QuickCamera(current.exam, current.sheetNumber) },
+                    onClose = { screen = Screen.Home },
+                )
+
+                is Screen.KeyCamera -> CameraScreen(
+                    onPhotoCaptured = { file -> screen = Screen.KeyPhoto(file, current.profile) },
+                    onClose = { screen = Screen.ExamForm },
+                )
+
+                is Screen.KeyPhoto -> KeySheetScreen(
+                    file = current.file,
+                    profile = current.profile,
+                    onUse = { answers ->
+                        draft.answerKey = answers
+                        screen = Screen.ExamForm
+                    },
+                    onRetake = { screen = Screen.KeyCamera(current.profile) },
+                    onCancel = { screen = Screen.ExamForm },
+                )
+            }
         }
-
-        is Screen.Camera -> CameraScreen(
-            onPhotoCaptured = { file -> screen = Screen.Photo(file, current.exam) },
-            onClose = { screen = Screen.Home },
-            modifier = modifier,
-        )
-
-        is Screen.Photo -> ScanResultScreen(
-            file = current.file,
-            exam = current.exam,
-            onSave = { name, code, readings, grade ->
-                viewModel.saveResult(current.exam, name, code, readings, grade)
-            },
-            onRetake = { screen = Screen.Camera(current.exam) },
-            onClose = { screen = Screen.Home },
-
-        )
-
-        is Screen.QuickCamera -> CameraScreen(
-            onPhotoCaptured = { file ->
-                screen = Screen.QuickPhoto(file, current.exam, current.sheetNumber)
-            },
-            onClose = { screen = Screen.Home },
-            modifier = modifier,
-        )
-
-        is Screen.QuickPhoto -> QuickGradeScreen(
-            file = current.file,
-            exam = current.exam,
-            sheetNumber = current.sheetNumber,
-            onNext = { screen = Screen.QuickCamera(current.exam, current.sheetNumber + 1) },
-            onRetake = { screen = Screen.QuickCamera(current.exam, current.sheetNumber) },
-            onClose = { screen = Screen.Home },
-
-        )
-
-        is Screen.KeyCamera -> CameraScreen(
-            onPhotoCaptured = { file -> screen = Screen.KeyPhoto(file, current.profile) },
-            onClose = { screen = Screen.ExamForm },
-            modifier = modifier,
-        )
-
-        is Screen.KeyPhoto -> KeySheetScreen(
-            file = current.file,
-            profile = current.profile,
-            onUse = { answers ->
-                draft.answerKey = answers
-                screen = Screen.ExamForm
-            },
-            onRetake = { screen = Screen.KeyCamera(current.profile) },
-            onCancel = { screen = Screen.ExamForm },
-
-        )
     }
 }
 
