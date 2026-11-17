@@ -44,6 +44,7 @@ import com.devdenisviana.gabaritoscanner.ui.scan.QuickGradeScreen
 import com.devdenisviana.gabaritoscanner.ui.scan.ScanResultScreen
 import com.devdenisviana.gabaritoscanner.ui.theme.GabaritoScannerTheme
 import java.io.File
+import com.devdenisviana.gabaritoscanner.domain.student.StudentTag
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -242,14 +243,14 @@ fun HomeScreen(
         Button(onClick = onExams) {
             Text(text = "Gabaritos")
         }
-        Button(onClick = { openSheetPdf(context, SheetProfile.DEFAULT) }) {
+        Button(onClick = { openSheetPdf(context, SheetProfile.DEFAULT, StudentTag("2024001", "Ana Souza")) }) {
             Text(text = "Gerar folha de respostas (PDF)")
         }
     }
 }
 
-private fun openSheetPdf(context: Context, profile: SheetProfile) {
-    val file = SheetPdfExporter.export(context, profile)
+private fun openSheetPdf(context: Context, profile: SheetProfile, student: StudentTag? = null) {
+    val file = SheetPdfExporter.export(context, profile, student)
     val uri = FileProvider.getUriForFile(
         context,
         "${context.packageName}.fileprovider",

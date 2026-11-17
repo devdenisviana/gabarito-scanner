@@ -7,6 +7,8 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import com.devdenisviana.gabaritoscanner.domain.sheet.SheetLayout
 import com.devdenisviana.gabaritoscanner.domain.sheet.SheetProfile
+import com.devdenisviana.gabaritoscanner.domain.student.QrCode
+import com.devdenisviana.gabaritoscanner.domain.student.StudentTag
 
 /**
  * Draws a printable answer sheet on an Android [Canvas] (A4, PDF points).
@@ -27,7 +29,17 @@ object SheetRenderer {
     private const val AREA_WIDTH = PAGE_WIDTH - 2 * MARKER_CENTER_INSET
     private const val AREA_HEIGHT = PAGE_HEIGHT - 2 * MARKER_CENTER_INSET
 
-    fun draw(canvas: Canvas, profile: SheetProfile, title: String = "Folha de Respostas") {
+    // Where the student's QR code is printed (page points).
+    private const val QR_LEFT = 440f
+    private const val QR_TOP = 80f
+    private const val QR_SIZE = 90f
+
+    fun draw(
+        canvas: Canvas,
+        profile: SheetProfile,
+        title: String = "Folha de Respostas",
+        student: StudentTag? = null,
+    ) {
         val layout = SheetLayout(profile)
         val radiusPx = layout.bubbleRadius * AREA_WIDTH
 
@@ -87,6 +99,9 @@ object SheetRenderer {
             canvas.drawText(label, lineLeft, y, leftText)
             canvas.drawLine(lineLeft + 40f, y + 2f, lineRight, y + 2f, stroke)
         }
+        if (student != null) {
+            canvas.drawText(student.name, lineLeft + 45f, 102f, leftText)
+        }
 
         canvas.drawText(
             "Preencha totalmente a bolinha com caneta preta ou azul escura. Não rasure.",
@@ -95,9 +110,14 @@ object SheetRenderer {
             centerText,
         )
 
-        // 3) Placeholder for the student's QR code (filled in a later step)
-        canvas.drawRect(440f, 80f, 530f, 170f, dashed)
-        canvas.drawText("QR", 485f, 128f, centerText)
+        // 3) Student QR code, or a dashed placeholder when no student is given
+        if (student == null) {
+            canvas.drawRect(QR_LEFT, QR_TOP, QR_LEFT + QR_SIZE, QR_TOP + QR_SIZE, dashed)
+            canvas.drawText("QR", QR_LEFT + QR_SIZE / 2f, QR_TOP + QR_SIZE / 2f + 3f, centerText)
+        } else {
+            drawQr(canvas, student.encode(), QR_LEFT, QR_TOP, QR_SIZE)
+            canvas.drawText(student.code, QR_LEFT + QR_SIZE / 2f, QR_TOP + QR_SIZE + 12f, centerText)
+        }
 
         // 4) Column headers (A, B, C...) above the first row of each column
         for (col in 0 until profile.columns) {
@@ -133,6 +153,30 @@ object SheetRenderer {
                 radiusPx,
                 stroke,
             )
+        }
+    }
+
+    /** Draws [text] as a QR code inside the square starting at ([left], [top]) with side [size]. */
+    private fun drawQr(canvas: Canvas, text: String, left: Float, top: Float, size: Float) {
+        // No anti-aliasing, so neighbouring modules don't leave thin light seams.
+        val paint = Paint().apply {
+            color = Color.BLACK
+            style = Paint.Style.FILL
+        }
+        val matrix = QrCode.encode(text, 1)
+        val module = size / matrix.width
+        for (y in 0 until matrix.height) {
+            for (x in 0 until matrix.width) {
+                if (matrix[x, y]) {
+                    canvas.drawRect(
+                        left + x * module,
+                        top + y * module,
+                        left + (x + 1) * module,
+                        top + (y + 1) * module,
+                        paint,
+                    )
+                }
+            }
         }
     }
 }
