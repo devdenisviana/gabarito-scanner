@@ -9,22 +9,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -42,6 +36,7 @@ import com.devdenisviana.gabaritoscanner.ui.exam.ExamListScreen
 import com.devdenisviana.gabaritoscanner.ui.exam.ExamPickerScreen
 import com.devdenisviana.gabaritoscanner.ui.exam.ExamResultsScreen
 import com.devdenisviana.gabaritoscanner.ui.exam.KeySheetScreen
+import com.devdenisviana.gabaritoscanner.ui.home.HomeScreen
 import com.devdenisviana.gabaritoscanner.ui.scan.QuickGradeScreen
 import com.devdenisviana.gabaritoscanner.ui.scan.ScanResultScreen
 import com.devdenisviana.gabaritoscanner.ui.theme.GabaritoScannerTheme
@@ -99,13 +94,14 @@ fun GabaritoApp(
     }
 
     when (val current = screen) {
+        // The new home screen handles the system bars itself, so it gets no extra padding.
         Screen.Home -> HomeScreen(
-            userEmail = userEmail,
-            onExams = { screen = Screen.Exams },
-            onScan = { screen = Screen.PickExam },
+            signedIn = userEmail != null,
             onQuickScan = { screen = Screen.PickExamQuick },
+            onScan = { screen = Screen.PickExam },
+            onExams = { screen = Screen.Exams },
+            onPrintSheet = { openSheetPdf(context, SheetProfile.DEFAULT) },
             onAccount = { screen = Screen.Account },
-            modifier = modifier,
         )
 
         Screen.Account -> AccountScreen(
@@ -231,46 +227,6 @@ fun GabaritoApp(
             onCancel = { screen = Screen.ExamForm },
             modifier = modifier,
         )
-    }
-}
-
-@Composable
-fun HomeScreen(
-    userEmail: String?,
-    onExams: () -> Unit,
-    onScan: () -> Unit,
-    onQuickScan: () -> Unit,
-    onAccount: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val context = LocalContext.current
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(text = "Gabarito Scanner")
-        Button(onClick = onQuickScan) {
-            Text(text = "Só corrigir (sem alunos)")
-        }
-        Button(onClick = onScan) {
-            Text(text = "Ler gabarito (câmera)")
-        }
-        Button(onClick = onExams) {
-            Text(text = "Gabaritos")
-        }
-        Button(onClick = { openSheetPdf(context, SheetProfile.DEFAULT) }) {
-            Text(text = "Gerar folha de respostas (PDF)")
-        }
-        Button(onClick = onAccount) {
-            Text(text = if (userEmail == null) "Entrar / criar conta" else "Conta")
-        }
-        if (userEmail != null) {
-            Text(text = "Conectado: $userEmail")
-        }
     }
 }
 

@@ -46,3 +46,7 @@ val ScoreGoodLight = Color(0xFF2E7D32)
 val ScoreGoodDark = Color(0xFF81C784)
 val ScoreBadLight = Color(0xFFC62828)
 val ScoreBadDark = Color(0xFFEF9A9A)
+
+// Cabeçalho (degradê vibrante, igual nos dois temas)
+val HeaderStart = Color(0xFF7C4DFF)
+val HeaderEnd = Color(0xFF536DFE)
