@@ -19,6 +19,25 @@ Projeto de portfólio, feito para uso real por professores da rede municipal (pr
 - **Histórico por prova** com média e lista de resultados.
 - **Conta e sincronização online**: login por e-mail e senha, envio dos gabaritos e resultados para a nuvem. O app funciona offline, e o envio manda só o que ainda não foi sincronizado.
 
+## Telas
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/1.jpeg" width="200" alt="Tela inicial"><br><sub>Tela inicial</sub></td>
+    <td align="center"><img src="docs/screenshots/2.jpeg" width="200" alt="Tela inicial"><br><sub>Tela inicial</sub></td>
+    <td align="center"><img src="docs/screenshots/3.jpeg" width="200" alt="Lista de gabaritos"><br><sub>Gabaritos</sub></td>
+    <td align="center"><img src="docs/screenshots/4.jpeg" width="200" alt="Novo gabarito"><br><sub>Novo gabarito</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/5.jpeg" width="200" alt="Escolha do gabarito"><br><sub>Escolha do gabarito</sub></td>
+    <td align="center"><img src="docs/screenshots/6.jpeg" width="200" alt="Folha de respostas em PDF"><br><sub>Folha de respostas (PDF)</sub></td>
+    <td align="center"><img src="docs/screenshots/7.jpeg" width="200" alt="Conta"><br><sub>Conta</sub></td>
+  </tr>
+</table>
+
+> Todas as telas usam dados fictícios.
+- 
+
 ## Como a leitura funciona
 
 1. **Foto** com CameraX.
