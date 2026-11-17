@@ -47,6 +47,8 @@ import androidx.compose.ui.unit.dp
 import com.devdenisviana.gabaritoscanner.data.ExamEntity
 import com.devdenisviana.gabaritoscanner.domain.student.StudentTag
 import com.devdenisviana.gabaritoscanner.ui.components.AppHeader
+import com.devdenisviana.gabaritoscanner.ui.components.EmptyState
+import com.devdenisviana.gabaritoscanner.ui.components.MiniSheet
 
 /** Lists the registered answer keys, with options to create, print the sheet and delete them. */
 @Composable
@@ -73,13 +75,9 @@ fun ExamListScreen(
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             if (exams.isEmpty()) {
-                Text(
-                    text = "Nenhum gabarito cadastrado ainda.\nToque em \"Novo gabarito\" para começar.",
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(32.dp),
+                EmptyState(
+                    message = "Nenhum gabarito cadastrado ainda.\nToque em \"Novo gabarito\" para começar.",
+                    modifier = Modifier.align(Alignment.Center),
                 )
             } else {
                 LazyColumn(
@@ -91,11 +89,19 @@ fun ExamListScreen(
                         ElevatedCard(modifier = Modifier.fillMaxWidth()) {
                             Column(modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 16.dp, bottom = 4.dp)) {
                                 Text(text = exam.name, style = MaterialTheme.typography.titleMedium)
-                                Text(
-                                    text = "${exam.questionCount} questões · alternativas A–$lastOption",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
+                                Text(text = exam.name, style = MaterialTheme.typography.titleMedium)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    MiniSheet(questionCount = exam.questionCount, columns = exam.columns)
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column {
+                                        Text(text = exam.name, style = MaterialTheme.typography.titleMedium)
+                                        Text(
+                                            text = "${exam.questionCount} questões · alternativas A–$lastOption",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
                                 Row {
                                     TextButton(onClick = { onOpen(exam) }) { Text("Resultados") }
                                     TextButton(onClick = {

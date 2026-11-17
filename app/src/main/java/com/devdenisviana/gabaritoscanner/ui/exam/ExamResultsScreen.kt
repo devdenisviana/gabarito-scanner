@@ -44,6 +44,7 @@ import com.devdenisviana.gabaritoscanner.ui.theme.ScoreGoodDark
 import com.devdenisviana.gabaritoscanner.ui.theme.ScoreGoodLight
 import java.text.DateFormat
 import java.util.Date
+import com.devdenisviana.gabaritoscanner.ui.components.EmptyState
 
 /** Green with 60% of correct answers or more, red below that. */
 @Composable
@@ -106,13 +107,9 @@ fun ExamResultsScreen(
 
                 if (results.isEmpty()) {
                     item {
-                        Text(
-                            text = "Nenhuma folha corrigida ainda.\nToque em \"Corrigir folhas\" para começar.",
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 24.dp),
+                        EmptyState(
+                            message = "Nenhuma folha corrigida ainda.\nToque em \"Corrigir folhas\" para começar.",
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }

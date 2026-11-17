@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.devdenisviana.gabaritoscanner.data.ExamEntity
 import com.devdenisviana.gabaritoscanner.ui.components.AppHeader
+import com.devdenisviana.gabaritoscanner.ui.components.EmptyState
 
 /** Lets the user choose which answer key the next scanned sheets will be graded against. */
 @Composable
@@ -51,11 +52,7 @@ fun ExamPickerScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    Text(
-                        text = "Cadastre um gabarito antes de ler as folhas.",
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    EmptyState(message = "Cadastre um gabarito antes de ler as folhas.")
                     Button(onClick = onNewExam) { Text("Novo gabarito") }
                 }
             } else {
