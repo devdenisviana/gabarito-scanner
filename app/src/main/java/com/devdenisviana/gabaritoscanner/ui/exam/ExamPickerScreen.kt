@@ -1,24 +1,27 @@
 package com.devdenisviana.gabaritoscanner.ui.exam
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.devdenisviana.gabaritoscanner.data.ExamEntity
+import com.devdenisviana.gabaritoscanner.ui.components.AppHeader
 
-/** Lets the user choose which exam the next scanned sheets will be graded against. */
+/** Lets the user choose which answer key the next scanned sheets will be graded against. */
 @Composable
 fun ExamPickerScreen(
     exams: List<ExamEntity>,
@@ -27,29 +30,53 @@ fun ExamPickerScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(text = "Qual prova você vai corrigir?", style = MaterialTheme.typography.headlineSmall)
-        OutlinedButton(onClick = onBack) { Text("Voltar") }
+    Column(modifier = modifier.fillMaxSize()) {
+        AppHeader(
+            title = "Escolha o gabarito",
+            subtitle = "Contra qual gabarito corrigir?",
+            onBack = onBack,
+        )
 
-        if (exams.isEmpty()) {
-            Text("Cadastre uma prova com o gabarito oficial antes de ler as folhas.")
-            Button(onClick = onNewExam) { Text("Nova prova") }
-        } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(exams, key = { it.id }) { exam ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onPick(exam) },
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(text = exam.name, style = MaterialTheme.typography.titleMedium)
-                            Text(text = "${exam.questionCount} questões")
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .navigationBarsPadding(),
+        ) {
+            if (exams.isEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Text(
+                        text = "Cadastre um gabarito antes de ler as folhas.",
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Button(onClick = onNewExam) { Text("Novo gabarito") }
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    items(exams, key = { it.id }) { exam ->
+                        val lastOption = 'A' + exam.optionsPerQuestion - 1
+                        ElevatedCard(
+                            onClick = { onPick(exam) },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(text = exam.name, style = MaterialTheme.typography.titleMedium)
+                                Text(
+                                    text = "${exam.questionCount} questões · alternativas A–$lastOption",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 }

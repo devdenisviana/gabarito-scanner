@@ -112,7 +112,7 @@ fun GabaritoApp(
             onSync = viewModel::sync,
             onSignOut = viewModel::signOut,
             onBack = { screen = Screen.Home },
-            modifier = modifier,
+
         )
 
         Screen.Exams -> ExamListScreen(
@@ -128,7 +128,7 @@ fun GabaritoApp(
             },
             onDelete = viewModel::deleteExam,
             onBack = { screen = Screen.Home },
-            modifier = modifier,
+
         )
 
         Screen.ExamForm -> ExamFormScreen(
@@ -138,7 +138,7 @@ fun GabaritoApp(
                 screen = Screen.KeyCamera(SheetProfile.of(questionCount, options))
             },
             onBack = { screen = Screen.Exams },
-            modifier = modifier,
+
         )
 
         Screen.PickExam -> ExamPickerScreen(
@@ -149,7 +149,7 @@ fun GabaritoApp(
                 screen = Screen.ExamForm
             },
             onBack = { screen = Screen.Home },
-            modifier = modifier,
+
         )
 
         Screen.PickExamQuick -> ExamPickerScreen(
@@ -160,7 +160,7 @@ fun GabaritoApp(
                 screen = Screen.ExamForm
             },
             onBack = { screen = Screen.Home },
-            modifier = modifier,
+
         )
 
         is Screen.Results -> {
@@ -171,7 +171,7 @@ fun GabaritoApp(
                 onScan = { screen = Screen.Camera(current.exam) },
                 onDelete = viewModel::deleteResult,
                 onBack = { screen = Screen.Exams },
-                modifier = modifier,
+
             )
         }
 
