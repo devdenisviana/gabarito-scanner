@@ -22,21 +22,20 @@ Projeto de portfólio, feito para uso real por professores da rede municipal (pr
 ## Telas
 
 <table>
-  <tr>
-    <td align="center"><img src="docs/screenshots/1.jpeg" width="200" alt="Tela inicial"><br><sub>Tela inicial</sub></td>
-    
-    <td align="center"><img src="docs/screenshots/3.jpeg" width="200" alt="Lista de gabaritos"><br><sub>Gabaritos</sub></td>
-    <td align="center"><img src="docs/screenshots/4.jpeg" width="200" alt="Novo gabarito"><br><sub>Novo gabarito</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/screenshots/5.jpeg" width="200" alt="Escolha do gabarito"><br><sub>Escolha do gabarito</sub></td>
-    <td align="center"><img src="docs/screenshots/6.jpeg" width="200" alt="Folha de respostas em PDF"><br><sub>Folha de respostas (PDF)</sub></td>
-    <td align="center"><img src="docs/screenshots/7.jpeg" width="200" alt="Conta"><br><sub>Conta</sub></td>
-  </tr>
+<tr>
+<td align="center"><img src="docs/screenshots/1.jpeg" width="200" alt="Tela inicial"><br><sub>Tela inicial</sub></td>
+<td align="center"><img src="docs/screenshots/3.jpeg" width="200" alt="Lista de gabaritos"><br><sub>Gabaritos</sub></td>
+<td align="center"><img src="docs/screenshots/4.jpeg" width="200" alt="Novo gabarito"><br><sub>Novo gabarito</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/screenshots/5.jpeg" width="200" alt="Escolha do gabarito"><br><sub>Escolha do gabarito</sub></td>
+<td align="center"><img src="docs/screenshots/6.jpeg" width="200" alt="Folha de respostas em PDF"><br><sub>Folha de respostas (PDF)</sub></td>
+<td align="center"><img src="docs/screenshots/7.jpeg" width="200" alt="Conta"><br><sub>Conta</sub></td>
+</tr>
 </table>
 
 > Todas as telas usam dados fictícios.
-- 
+
 
 ## Como a leitura funciona
 
