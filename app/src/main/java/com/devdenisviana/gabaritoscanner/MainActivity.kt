@@ -189,7 +189,7 @@ fun GabaritoApp(
             },
             onRetake = { screen = Screen.Camera(current.exam) },
             onClose = { screen = Screen.Home },
-            modifier = modifier,
+
         )
 
         is Screen.QuickCamera -> CameraScreen(
