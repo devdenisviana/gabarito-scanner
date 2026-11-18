@@ -6,6 +6,12 @@ Projeto de portfólio, feito para uso real por professores da rede municipal (pr
 
 > **Dados fictícios.** Este repositório não contém dados reais de alunos. Todos os nomes e matrículas usados em testes e exemplos são inventados (LGPD).
 
+## Vídeo de apresentação
+
+[![Vídeo de apresentação do Gabarito Scanner](https://img.youtube.com/vi/4ohJDKyN9cA/hqdefault.jpg)](https://www.youtube.com/watch?v=4ohJDKyN9cA)
+
+▶ [Assistir no YouTube](https://www.youtube.com/watch?v=4ohJDKyN9cA)
+
 ## O que o app faz
 
 - **Cadastro de gabarito** de duas formas:
