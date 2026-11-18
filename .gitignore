@@ -15,3 +15,9 @@
 local.properties
 # Firebase config (each developer uses their own)
 app/google-services.json
+# Release / assinatura (nunca versionar)
+*.apk
+*.aab
+*.jks
+*.keystore
+app/release/cler
