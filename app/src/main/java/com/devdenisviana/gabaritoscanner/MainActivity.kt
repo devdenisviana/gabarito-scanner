@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -17,11 +18,13 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +52,8 @@ import com.devdenisviana.gabaritoscanner.ui.home.HomeScreen
 import com.devdenisviana.gabaritoscanner.ui.scan.QuickGradeScreen
 import com.devdenisviana.gabaritoscanner.ui.scan.ScanResultScreen
 import com.devdenisviana.gabaritoscanner.ui.theme.GabaritoScannerTheme
+import com.devdenisviana.gabaritoscanner.ui.theme.ThemeMode
+import com.devdenisviana.gabaritoscanner.ui.theme.ThemePreference
 import java.io.File
 
 class MainActivity : ComponentActivity() {
@@ -56,13 +61,44 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            GabaritoScannerTheme {
+            val context = LocalContext.current
+            var themeMode by remember { mutableStateOf(ThemePreference.load(context)) }
+            val darkTheme = when (themeMode) {
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+            }
+
+            // The colored header is always at the top, so the status bar icons stay light.
+            // The bottom bar icons follow the app theme, even when it differs from the phone's.
+            DisposableEffect(darkTheme) {
+                this@MainActivity.enableEdgeToEdge(
+                    statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+                    navigationBarStyle = if (darkTheme) {
+                        SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                    } else {
+                        SystemBarStyle.light(
+                            android.graphics.Color.TRANSPARENT,
+                            android.graphics.Color.TRANSPARENT,
+                        )
+                    },
+                )
+                onDispose {}
+            }
+
+            GabaritoScannerTheme(darkTheme = darkTheme) {
                 // Every screen handles the system bars itself (edge-to-edge).
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
                 ) {
-                    GabaritoApp()
+                    GabaritoApp(
+                        themeMode = themeMode,
+                        onThemeChange = { mode ->
+                            themeMode = mode
+                            ThemePreference.save(context, mode)
+                        },
+                    )
                 }
             }
         }
@@ -100,6 +136,8 @@ private fun Screen.depth(): Int = when (this) {
 
 @Composable
 fun GabaritoApp(
+    themeMode: ThemeMode,
+    onThemeChange: (ThemeMode) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AppViewModel = viewModel(),
 ) {
@@ -143,6 +181,8 @@ fun GabaritoApp(
             when (current) {
                 Screen.Home -> HomeScreen(
                     signedIn = userEmail != null,
+                    themeMode = themeMode,
+                    onThemeChange = onThemeChange,
                     onQuickScan = { screen = Screen.PickExamQuick },
                     onScan = { screen = Screen.PickExam },
                     onExams = { screen = Screen.Exams },

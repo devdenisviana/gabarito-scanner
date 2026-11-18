@@ -19,13 +19,19 @@ private val LightColors = lightColorScheme(
     onTertiary = LightOnTertiary,
     background = LightBackground,
     onBackground = LightOnSurface,
-    surface = LightBackground,
+    surface = LightSurface,
     onSurface = LightOnSurface,
     surfaceVariant = LightSurfaceVariant,
     onSurfaceVariant = LightOnSurfaceVariant,
     outline = LightOutline,
+    outlineVariant = LightOutlineVariant,
     error = LightError,
     onError = LightOnError,
+    surfaceContainerLowest = LightSurfaceContainerLowest,
+    surfaceContainerLow = LightSurfaceContainerLow,
+    surfaceContainer = LightSurfaceContainer,
+    surfaceContainerHigh = LightSurfaceContainerHigh,
+    surfaceContainerHighest = LightSurfaceContainerHighest,
 )
 
 private val DarkColors = darkColorScheme(
@@ -46,11 +52,17 @@ private val DarkColors = darkColorScheme(
     surfaceVariant = DarkSurfaceVariant,
     onSurfaceVariant = DarkOnSurfaceVariant,
     outline = DarkOutline,
+    outlineVariant = DarkOutlineVariant,
     error = DarkError,
     onError = DarkOnError,
+    surfaceContainerLowest = DarkSurfaceContainerLowest,
+    surfaceContainerLow = DarkSurfaceContainerLow,
+    surfaceContainer = DarkSurfaceContainer,
+    surfaceContainerHigh = DarkSurfaceContainerHigh,
+    surfaceContainerHighest = DarkSurfaceContainerHighest,
 )
 
-/** App theme: lilac palette, light or dark following the phone's setting. */
+/** App theme: indigo and cyan palette, light or dark following the phone's setting. */
 @Composable
 fun GabaritoScannerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

@@ -16,7 +16,7 @@ fun badColor(): Color = if (isSystemInDarkTheme()) ScoreBadDark else ScoreBadLig
 
 /** Amber, used for blank answers and double marks. */
 @Composable
-fun warnColor(): Color = if (isSystemInDarkTheme()) Color(0xFFFFB74D) else Color(0xFFEF6C00)
+fun warnColor(): Color = if (isSystemInDarkTheme()) Color(0xFFF59E0B) else Color(0xFFD97706)
 
 /** Green with 60% of correct answers or more, red below that. */
 @Composable
