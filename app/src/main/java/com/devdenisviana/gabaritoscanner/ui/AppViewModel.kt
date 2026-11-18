@@ -9,6 +9,7 @@ import com.devdenisviana.gabaritoscanner.data.ScanResultEntity
 import com.devdenisviana.gabaritoscanner.domain.sheet.SheetProfile
 import com.devdenisviana.gabaritoscanner.grading.AnswerKey
 import com.devdenisviana.gabaritoscanner.grading.GradeResult
+import com.devdenisviana.gabaritoscanner.grading.QuestionOutcome
 import com.devdenisviana.gabaritoscanner.scan.Answer
 import com.devdenisviana.gabaritoscanner.scan.QuestionReading
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -124,6 +125,57 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             )
         }
         return null
+    }
+
+    /**
+     * Changes the name and the answers of a saved exam (the size of the sheet stays the same).
+     * Grades already saved for this exam are recalculated and queued to be uploaded again.
+     * Returns an error message to show the user, or null on success.
+     */
+    fun updateExam(exam: ExamEntity, name: String, answerKeyText: String): String? {
+        val trimmedName = name.trim()
+        if (trimmedName.isEmpty()) return "Informe o nome do gabarito."
+
+        val profile = SheetProfile.of(exam.questionCount, exam.optionsPerQuestion)
+        val key = try {
+            AnswerKey.parse(answerKeyText, profile)
+        } catch (e: IllegalArgumentException) {
+            return e.message
+        }
+
+        viewModelScope.launch {
+            examDao.update(
+                exam.copy(
+                    name = trimmedName,
+                    answerKey = key.answers.joinToString(""),
+                ),
+            )
+            val regraded = resultDao.getByExam(exam.id).map { regrade(it, key) }
+            if (regraded.isNotEmpty()) resultDao.updateAll(regraded)
+        }
+        return null
+    }
+
+    /** Grades a saved result again against [key], using the answers that were read from the sheet. */
+    private fun regrade(result: ScanResultEntity, key: AnswerKey): ScanResultEntity {
+        val outcomes = key.answers.mapIndexed { index, correctOption ->
+            when (result.readAnswers.getOrElse(index) { '-' }) {
+                '-' -> QuestionOutcome.BLANK
+                '*' -> QuestionOutcome.MULTIPLE
+                correctOption -> QuestionOutcome.CORRECT
+                else -> QuestionOutcome.WRONG
+            }
+        }
+        val grade = GradeResult(outcomes)
+        return result.copy(
+            correct = grade.correct,
+            wrong = grade.wrong,
+            blank = grade.blank,
+            multiple = grade.multiple,
+            total = grade.total,
+            score = grade.score10,
+            syncedAt = null,
+        )
     }
 
     fun deleteExam(exam: ExamEntity) {

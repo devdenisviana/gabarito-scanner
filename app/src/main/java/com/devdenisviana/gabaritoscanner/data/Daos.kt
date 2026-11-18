@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -21,6 +22,9 @@ interface ExamDao {
     @Insert
     suspend fun insert(exam: ExamEntity): Long
 
+    @Update
+    suspend fun update(exam: ExamEntity)
+
     @Delete
     suspend fun delete(exam: ExamEntity)
 }
@@ -30,6 +34,9 @@ interface ScanResultDao {
 
     @Query("SELECT * FROM scan_results WHERE examId = :examId ORDER BY scannedAt DESC")
     fun observeByExam(examId: Long): Flow<List<ScanResultEntity>>
+
+    @Query("SELECT * FROM scan_results WHERE examId = :examId")
+    suspend fun getByExam(examId: Long): List<ScanResultEntity>
 
     @Query("SELECT * FROM scan_results WHERE syncedAt IS NULL")
     suspend fun getUnsynced(): List<ScanResultEntity>
@@ -42,6 +49,9 @@ interface ScanResultDao {
 
     @Insert
     suspend fun insert(result: ScanResultEntity): Long
+
+    @Update
+    suspend fun updateAll(results: List<ScanResultEntity>)
 
     @Delete
     suspend fun delete(result: ScanResultEntity)

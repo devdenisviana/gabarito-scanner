@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.AlertDialog
@@ -39,6 +40,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,12 +53,13 @@ import com.devdenisviana.gabaritoscanner.ui.components.AppHeader
 import com.devdenisviana.gabaritoscanner.ui.components.EmptyState
 import com.devdenisviana.gabaritoscanner.ui.components.MiniSheet
 
-/** Lists the registered answer keys, with options to create, print the sheet and delete them. */
+/** Lists the registered answer keys, with options to create, edit, print the sheet and delete them. */
 @Composable
 fun ExamListScreen(
     exams: List<ExamEntity>,
     onOpen: (ExamEntity) -> Unit,
     onSheet: (ExamEntity, StudentTag?) -> Unit,
+    onEdit: (ExamEntity) -> Unit,
     onNewExam: () -> Unit,
     onDelete: (ExamEntity) -> Unit,
     onBack: () -> Unit,
@@ -109,6 +112,7 @@ fun ExamListScreen(
                                         sheetCode = ""
                                         sheetExam = exam
                                     }) { Text("Folha") }
+                                    TextButton(onClick = { onEdit(exam) }) { Text("Editar") }
                                     TextButton(
                                         onClick = { examToDelete = exam },
                                         colors = ButtonDefaults.textButtonColors(
@@ -323,6 +327,100 @@ fun ExamFormScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Salvar gabarito") }
+        }
+    }
+}
+
+/**
+ * Form to edit a saved answer key: only the name and the answers can change, because the
+ * size of the sheet is fixed once it exists. [onSave] returns an error message to display,
+ * or null when it was saved (the screen then goes back).
+ */
+@Composable
+fun ExamEditScreen(
+    exam: ExamEntity,
+    onSave: (name: String, answerKey: String) -> String?,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var name by rememberSaveable(exam.id) { mutableStateOf(exam.name) }
+    var answerKey by rememberSaveable(exam.id) {
+        mutableStateOf(exam.answerKey.chunked(5).joinToString(" "))
+    }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    val typed = answerKey.count { !it.isWhitespace() }
+    val lastLetter = 'A' + exam.optionsPerQuestion - 1
+
+    Column(modifier = modifier.fillMaxSize()) {
+        AppHeader(
+            title = "Editar gabarito",
+            icon = Icons.Filled.Edit,
+            subtitle = "Altere o nome ou as respostas",
+            onBack = onBack,
+        )
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .imePadding()
+                .navigationBarsPadding()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            OutlinedTextField(
+                value = name,
+                onValueChange = {
+                    name = it
+                    error = null
+                },
+                label = { Text("Nome do gabarito") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Text(
+                text = "${exam.questionCount} questões · alternativas A–$lastLetter " +
+                        "(o tamanho da folha não pode ser alterado)",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            OutlinedTextField(
+                value = answerKey,
+                onValueChange = {
+                    answerKey = it.uppercase()
+                    error = null
+                },
+                label = { Text("Respostas do gabarito") },
+                supportingText = {
+                    Text("$typed / ${exam.questionCount} respostas, letras de A a $lastLetter. Ex.: ABCD ABCD")
+                },
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Text(
+                text = "Ao salvar, as notas já salvas desta prova serão recalculadas com o gabarito novo.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            error?.let { Text(text = it, color = MaterialTheme.colorScheme.error) }
+
+            Button(
+                onClick = {
+                    val message = onSave(name, answerKey)
+                    if (message == null) {
+                        onBack()
+                    } else {
+                        error = message
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Salvar alterações") }
         }
     }
 }

@@ -9,33 +9,49 @@ Projeto de portfólio, feito para uso real por professores da rede municipal (pr
 ## O que o app faz
 
 - **Cadastro de gabarito** de duas formas:
-    - digitando as respostas (o professor escolhe a quantidade de questões, de 1 a 100, e de alternativas, de 2 a 5);
-    - **lendo uma folha preenchida** pela câmera, com tela de conferência para corrigir marcações em branco ou duplas.
+  - digitando as respostas (o professor escolhe a quantidade de questões, de 1 a 100, e de alternativas, de 2 a 5);
+  - **lendo uma folha preenchida** pela câmera, com tela de conferência para corrigir marcações em branco ou duplas.
+- **Edição de gabarito salvo**: dá para corrigir o nome e as respostas depois de salvar (o tamanho da folha fica fixo). As notas já corrigidas dessa prova são **recalculadas automaticamente** e voltam para a fila de sincronização.
 - **Folha de respostas em PDF** gerada pelo próprio app, de acordo com o gabarito escolhido (colunas ajustadas automaticamente), pronta para imprimir.
 - **QR code por aluno**: a folha pode sair com o QR do aluno (matrícula e nome) e o nome já impresso.
 - **Dois modos de correção**:
-    - **Só corrigir**: lê uma folha, mostra a nota e passa para a próxima, sem cadastrar aluno e sem salvar nada;
-    - **Com aluno**: identifica o aluno pelo QR code (ou o professor digita nome e matrícula) e guarda o resultado.
+  - **Só corrigir**: lê uma folha, mostra a nota e passa para a próxima, sem cadastrar aluno e sem salvar nada;
+  - **Com aluno**: identifica o aluno pelo QR code (ou o professor digita nome e matrícula) e guarda o resultado.
 - **Histórico por prova** com média e lista de resultados.
 - **Conta e sincronização online**: login por e-mail e senha, envio dos gabaritos e resultados para a nuvem. O app funciona offline, e o envio manda só o que ainda não foi sincronizado.
+- **Tema claro, escuro ou automático** (acompanha o celular), com a escolha guardada no aparelho.
 
 ## Telas
 
 <table>
 <tr>
-<td align="center"><img src="docs/screenshots/1.jpeg" width="200" alt="Tela inicial"><br><sub>Tela inicial</sub></td>
-<td align="center"><img src="docs/screenshots/3.jpeg" width="200" alt="Lista de gabaritos"><br><sub>Gabaritos</sub></td>
-<td align="center"><img src="docs/screenshots/4.jpeg" width="200" alt="Novo gabarito"><br><sub>Novo gabarito</sub></td>
+<td align="center"><img src="docs/screenshots/home-escuro.jpg" width="220"><br><sub>Tela inicial (escuro)</sub></td>
+<td align="center"><img src="docs/screenshots/home-claro.jpg" width="220"><br><sub>Tela inicial (claro)</sub></td>
+<td align="center"><img src="docs/screenshots/aparencia.jpg" width="220"><br><sub>Escolha do tema</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="docs/screenshots/5.jpeg" width="200" alt="Escolha do gabarito"><br><sub>Escolha do gabarito</sub></td>
-<td align="center"><img src="docs/screenshots/6.jpeg" width="200" alt="Folha de respostas em PDF"><br><sub>Folha de respostas (PDF)</sub></td>
-<td align="center"><img src="docs/screenshots/7.jpeg" width="200" alt="Conta"><br><sub>Conta</sub></td>
+<td align="center"><img src="docs/screenshots/novo-gabarito.jpg" width="220"><br><sub>Novo gabarito</sub></td>
+<td align="center"><img src="docs/screenshots/folha-pdf.jpg" width="220"><br><sub>Folha de respostas (PDF)</sub></td>
+<td align="center"><img src="docs/screenshots/gabaritos-escuro.jpg" width="220"><br><sub>Lista de gabaritos (escuro)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/screenshots/gabaritos-claro.jpg" width="220"><br><sub>Lista de gabaritos (claro)</sub></td>
+<td align="center"><img src="docs/screenshots/editar-escuro.jpg" width="220"><br><sub>Editar gabarito (escuro)</sub></td>
+<td align="center"><img src="docs/screenshots/editar-claro.jpg" width="220"><br><sub>Editar gabarito (claro)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/screenshots/correcao-rapida.jpg" width="220"><br><sub>Resultado da correção</sub></td>
+<td align="center"><img src="docs/screenshots/escolha-gabarito.jpg" width="220"><br><sub>Escolha do gabarito</sub></td>
+<td align="center"><img src="docs/screenshots/entrar-escuro.jpg" width="220"><br><sub>Entrar na conta</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/screenshots/criar-conta-escuro.jpg" width="220"><br><sub>Criar conta (escuro)</sub></td>
+<td align="center"><img src="docs/screenshots/entrar-claro.jpg" width="220"><br><sub>Entrar (claro)</sub></td>
+<td align="center"><img src="docs/screenshots/criar-conta-claro.jpg" width="220"><br><sub>Criar conta (claro)</sub></td>
 </tr>
 </table>
 
 > Todas as telas usam dados fictícios.
-
 
 ## Como a leitura funciona
 

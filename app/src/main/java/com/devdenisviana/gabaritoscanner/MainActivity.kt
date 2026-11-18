@@ -43,6 +43,7 @@ import com.devdenisviana.gabaritoscanner.ui.AppViewModel
 import com.devdenisviana.gabaritoscanner.ui.account.AccountScreen
 import com.devdenisviana.gabaritoscanner.ui.camera.CameraScreen
 import com.devdenisviana.gabaritoscanner.ui.exam.ExamDraft
+import com.devdenisviana.gabaritoscanner.ui.exam.ExamEditScreen
 import com.devdenisviana.gabaritoscanner.ui.exam.ExamFormScreen
 import com.devdenisviana.gabaritoscanner.ui.exam.ExamListScreen
 import com.devdenisviana.gabaritoscanner.ui.exam.ExamPickerScreen
@@ -111,6 +112,7 @@ sealed interface Screen {
     data object Account : Screen
     data object Exams : Screen
     data object ExamForm : Screen
+    data class ExamEdit(val exam: ExamEntity) : Screen
     data object PickExam : Screen
     data object PickExamQuick : Screen
     data class Results(val exam: ExamEntity) : Screen
@@ -129,7 +131,7 @@ sealed interface Screen {
 private fun Screen.depth(): Int = when (this) {
     Screen.Home -> 0
     Screen.Account, Screen.Exams, Screen.PickExam, Screen.PickExamQuick -> 1
-    Screen.ExamForm, is Screen.Results, is Screen.Camera, is Screen.Photo,
+    Screen.ExamForm, is Screen.ExamEdit, is Screen.Results, is Screen.Camera, is Screen.Photo,
     is Screen.QuickCamera, is Screen.QuickPhoto -> 2
     is Screen.KeyCamera, is Screen.KeyPhoto -> 3
 }
@@ -150,7 +152,7 @@ fun GabaritoApp(
 
     BackHandler(enabled = screen != Screen.Home) {
         screen = when (screen) {
-            Screen.ExamForm, is Screen.Results -> Screen.Exams
+            Screen.ExamForm, is Screen.ExamEdit, is Screen.Results -> Screen.Exams
             is Screen.KeyCamera, is Screen.KeyPhoto -> Screen.ExamForm
             else -> Screen.Home
         }
@@ -207,6 +209,7 @@ fun GabaritoApp(
                         screen = Screen.Results(exam)
                     },
                     onSheet = { exam, student -> openSheetPdf(context, exam.toSheetProfile(), student) },
+                    onEdit = { exam -> screen = Screen.ExamEdit(exam) },
                     onNewExam = {
                         draft.clear()
                         screen = Screen.ExamForm
@@ -221,6 +224,12 @@ fun GabaritoApp(
                     onReadFromSheet = { questionCount, options ->
                         screen = Screen.KeyCamera(SheetProfile.of(questionCount, options))
                     },
+                    onBack = { screen = Screen.Exams },
+                )
+
+                is Screen.ExamEdit -> ExamEditScreen(
+                    exam = current.exam,
+                    onSave = { name, answerKey -> viewModel.updateExam(current.exam, name, answerKey) },
                     onBack = { screen = Screen.Exams },
                 )
 
